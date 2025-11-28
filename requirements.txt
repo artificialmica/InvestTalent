@@ -11,9 +11,11 @@ confection==0.1.5
 cymem==2.0.11
 Django==5.2.8
 en_core_web_sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl#sha256=1932429db727d4bff3deed6b34cfc05df17794f4a52eeb26cf8928f7c1a0fb85
+fuzzywuzzy==0.18.0
 idna==3.11
 Jinja2==3.1.6
 joblib==1.5.2
+Levenshtein==0.27.3
 lxml==6.0.2
 MarkupSafe==3.0.3
 murmurhash==1.0.13
@@ -28,7 +30,9 @@ pydantic_core==2.41.5
 PyPDF2==3.0.1
 python-decouple==3.8
 python-docx==1.2.0
+python-Levenshtein==0.27.3
 python-magic-bin==0.4.14
+RapidFuzz==3.14.3
 regex==2025.11.3
 requests==2.32.5
 scikit-learn==1.7.2

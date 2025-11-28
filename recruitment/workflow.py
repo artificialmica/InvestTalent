@@ -6,32 +6,8 @@ Provides status history, timeline tracking, and workflow analytics
 
 from django.db import models
 from django.utils import timezone
-from .models import Candidate
+from .models import Candidate, WorkflowEvent
 import json
-
-
-class WorkflowEvent(models.Model):
-    """
-    Tracks individual events in the recruitment workflow
-    """
-    candidate = models.ForeignKey(
-        Candidate,
-        on_delete=models.CASCADE,
-        related_name='workflow_events'
-    )
-    event_type = models.CharField(max_length=50)
-    old_status = models.CharField(max_length=20, null=True, blank=True)
-    new_status = models.CharField(max_length=20)
-    notes = models.TextField(blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    created_by = models.CharField(max_length=100, default='System')
-    
-    class Meta:
-        ordering = ['-created_at']
-    
-    def __str__(self):
-        return f"{self.candidate.name} - {self.event_type} - {self.created_at}"
-
 
 class WorkflowTracker:
     """

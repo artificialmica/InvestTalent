@@ -1,7 +1,5 @@
 from django.contrib import admin
-from .models import Candidate, Resume, Education, Experience, Skill, Score
-from .workflow import WorkflowEvent
-
+from .models import Candidate, Resume, Education, Experience, Skill, Score, WorkflowEvent
 @admin.register(Candidate)
 class CandidateAdmin(admin.ModelAdmin):
     list_display = [

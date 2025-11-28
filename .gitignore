@@ -1,0 +1,46 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+
+# Django
+*.log
+db.sqlite3
+db.sqlite3-journal
+/media
+/staticfiles
+
+# Environment variables - CRITICAL!
+.env
+.env.local
+.env.*.local
+*.env
+
+# PostgreSQL
+*.sql
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Uploads (contains candidate CVs - private data!)
+media/resumes/
+
+# Machine Learning Models
+recruitment/ml_models/
+
+# Test coverage
+htmlcov/
+.coverage
+.pytest_cache/

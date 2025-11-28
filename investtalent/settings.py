@@ -11,7 +11,9 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+from decouple import config
 import os
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -20,13 +22,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-y+m9l==+yv2(t4!*00t#l_5wxkf@ka-^)pl!%@g!z&c99s2p+l'
+SECRET_KEY = config('SECRET_KEY')
+
+
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = config('DEBUG', default=False, cast=bool)
 
-ALLOWED_HOSTS = []
-
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1').split(',')
 
 # Application definition
 
@@ -76,11 +79,11 @@ WSGI_APPLICATION = 'investtalent.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'investtalent_db',
-        'USER': 'postgres',
-        'PASSWORD': 'Mariam223',  
-        'HOST': 'localhost',
-        'PORT': '5432',
+        'NAME': config('DB_NAME'),
+        'USER': config('DB_USER'),
+        'PASSWORD': config('DB_PASSWORD'),
+        'HOST': config('DB_HOST', default='localhost'),
+        'PORT': config('DB_PORT', default='5432'),
     }
 }
 
@@ -129,3 +132,19 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Media files (uploaded resumes)
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+# File Upload Settings
+MAX_UPLOAD_SIZE = config('MAX_UPLOAD_SIZE', default=10485760, cast=int)
+
+# Scoring Weights
+EDUCATION_WEIGHT = config('EDUCATION_WEIGHT', default=0.25, cast=float)
+EXPERIENCE_WEIGHT = config('EXPERIENCE_WEIGHT', default=0.30, cast=float)
+SKILLS_WEIGHT = config('SKILLS_WEIGHT', default=0.25, cast=float)
+ISLAMIC_FINANCE_WEIGHT = config('ISLAMIC_FINANCE_WEIGHT', default=0.20, cast=float)
+
+# Fairness Settings
+FAIRNESS_THRESHOLD = config('FAIRNESS_THRESHOLD', default=0.80, cast=float)
+KEYWORD_STUFFING_THRESHOLD = config('KEYWORD_STUFFING_THRESHOLD', default=0.10, cast=float)
+
+# NLP Settings
+SPACY_MODEL = config('SPACY_MODEL', default='en_core_web_sm')

@@ -10,6 +10,16 @@ class Candidate(models.Model):
     years_experience = models.IntegerField(default=0)
     linkedin_url = models.URLField(blank=True, null=True)
     
+    # Audit fields
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    file_hash = models.CharField(max_length=64, null=True, blank=True)  # SHA-256 hash
+    is_verified = models.BooleanField(default=False)
+    security_flags = models.JSONField(default=dict, blank=True)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    
     STATUS_CHOICES = [
         ('received', 'Application Received'),
         ('screening', 'Under Screening'),

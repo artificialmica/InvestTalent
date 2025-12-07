@@ -25,7 +25,8 @@ class SecurityValidator:
         self.ALLOWED_MIME_TYPES = [
             'application/pdf',
             'application/vnd.openxmlformats-officedocument.wordprocessingml.document',  # .docx
-            'application/msword'  # .doc
+            'application/msword', # .doc
+             'application/octet-stream',
         ]
         
         # Dangerous patterns in text

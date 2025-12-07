@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analytics Dashboard - InvestTalent-AI</title>
+    
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f7fa;
+        }
+        
+        .navbar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 40px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .navbar h1 {
+            font-size: 28px;
+            margin-bottom: 5px;
+        }
+        
+        .nav-links {
+            margin-top: 15px;
+        }
+        
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            margin-right: 20px;
+            opacity: 0.9;
+            font-size: 14px;
+        }
+        
+        .nav-links a:hover {
+            opacity: 1;
+            text-decoration: underline;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 30px 40px;
+        }
+        
+        .section {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            margin-bottom: 25px;
+        }
+        
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        
+        .section-header h2 {
+            color: #333;
+            font-size: 22px;
+        }
+        
+        .export-btn {
+            background: #667eea;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 14px;
+        }
+        
+        .export-btn:hover {
+            background: #5568d3;
+        }
+        
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .metric-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .metric-label {
+            color: #666;
+            font-size: 13px;
+            margin-bottom: 8px;
+        }
+        
+        .metric-value {
+            font-size: 32px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .metric-subtext {
+            font-size: 12px;
+            color: #999;
+        }
+        
+        /* CHART CONTAINERS */
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin: 20px 0;
+        }
+        
+        .chart-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 30px;
+            margin-top: 20px;
+        }
+        
+        .chart-box {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        
+        .chart-box h3 {
+            color: #333;
+            font-size: 16px;
+            margin-bottom: 15px;
+        }
+        
+        .skills-list {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .skill-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            margin-bottom: 8px;
+            background: white;
+            border-radius: 5px;
+        }
+        
+        .skill-name {
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .skill-count {
+            color: #667eea;
+            font-weight: bold;
+        }
+        
+        .timestamp {
+            text-align: center;
+            color: #999;
+            font-size: 12px;
+            margin-top: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <h1>📊 Analytics Dashboard</h1>
+        <div class="nav-links">
+            <a href="{% url 'dashboard' %}">← Dashboard</a>
+            <a href="{% url 'dashboard' %}">All Candidates</a>
+            {% comment %} <a href="{% url 'fairness_report' %}">Fairness Report</a> {% endcomment %}
+        </div>
+    </div>
+    
+    <div class="container">
+        <!-- Hiring Funnel Metrics -->
+        <div class="section">
+            <div class="section-header">
+                <h2>Hiring Funnel Overview</h2>
+                <a href="{% url 'export_report' %}" class="export-btn">📥 Export Report</a>
+            </div>
+            
+            {% if report.hiring_funnel.status == 'no_data' %}
+            <p style="color: #999; text-align: center; padding: 40px;">{{ report.hiring_funnel.message }}</p>
+            {% else %}
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-label">Total Applications</div>
+                    <div class="metric-value">{{ report.hiring_funnel.total_applications }}</div>
+                </div>
+                
+                <div class="metric-card">
+                    <div class="metric-label">Screening Rate</div>
+                    <div class="metric-value">{{ report.hiring_funnel.screening_rate }}%</div>
+                    <div class="metric-subtext">{{ report.hiring_funnel.screening }} candidates</div>
+                </div>
+                
+                <div class="metric-card">
+                    <div class="metric-label">Interview Rate</div>
+                    <div class="metric-value">{{ report.hiring_funnel.interview_rate }}%</div>
+                    <div class="metric-subtext">{{ report.hiring_funnel.interview }} candidates</div>
+                </div>
+                
+                <div class="metric-card">
+                    <div class="metric-label">Hire Rate</div>
+                    <div class="metric-value">{{ report.hiring_funnel.hire_rate }}%</div>
+                    <div class="metric-subtext">{{ report.hiring_funnel.hired }} hired</div>
+                </div>
+            </div>
+            
+            <!-- FUNNEL CHART -->
+            <div class="chart-container">
+                <canvas id="funnelChart"></canvas>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Scoring Statistics -->
+        <div class="section">
+            <div class="section-header">
+                <h2>Scoring Statistics</h2>
+            </div>
+            
+            {% if report.score_statistics.status == 'no_data' %}
+            <p style="color: #999; text-align: center; padding: 40px;">No scoring data available</p>
+            {% else %}
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-label">Average Total Score</div>
+                    <div class="metric-value">{{ report.score_statistics.avg_total|floatformat:1 }}</div>
+                    <div class="metric-subtext">out of 100</div>
+                </div>
+                
+                <div class="metric-card">
+                    <div class="metric-label">Avg Education Score</div>
+                    <div class="metric-value">{{ report.score_statistics.avg_education|floatformat:1 }}</div>
+                </div>
+                
+                <div class="metric-card">
+                    <div class="metric-label">Avg Experience Score</div>
+                    <div class="metric-value">{{ report.score_statistics.avg_experience|floatformat:1 }}</div>
+                </div>
+                
+                <div class="metric-card">
+                    <div class="metric-label">Avg Skills Score</div>
+                    <div class="metric-value">{{ report.score_statistics.avg_skills|floatformat:1 }}</div>
+                </div>
+            </div>
+            
+            <!-- SCORE DISTRIBUTION CHART -->
+            <div class="chart-grid">
+                <div class="chart-box">
+                    <h3>Score Distribution</h3>
+                    <div class="chart-container">
+                        <canvas id="scoreDistChart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="chart-box">
+                    <h3>Score Breakdown by Category</h3>
+                    <div class="chart-container">
+                        <canvas id="scoreBreakdownChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Islamic Finance Expertise -->
+        <div class="section">
+            <div class="section-header">
+                <h2>☪️ Islamic Finance Expertise</h2>
+            </div>
+            
+            {% if report.islamic_finance.status == 'no_data' %}
+            <p style="color: #999; text-align: center; padding: 40px;">No data available</p>
+            {% else %}
+            <div class="metrics-grid">
+                <div class="metric-card" style="border-left-color: #28a745;">
+                    <div class="metric-label">IF Penetration Rate</div>
+                    <div class="metric-value">{{ report.islamic_finance.if_penetration_rate }}%</div>
+                    <div class="metric-subtext">{{ report.islamic_finance.if_any_background }} of {{ report.islamic_finance.total_candidates }} candidates</div>
+                </div>
+                
+                <div class="metric-card">
+                    <div class="metric-label">IF Education</div>
+                    <div class="metric-value">{{ report.islamic_finance.if_education }}</div>
+                    <div class="metric-subtext">Candidates with IF certifications</div>
+                </div>
+                
+                <div class="metric-card">
+                    <div class="metric-label">IF Experience</div>
+                    <div class="metric-value">{{ report.islamic_finance.if_experience }}</div>
+                    <div class="metric-subtext">Candidates with IF work experience</div>
+                </div>
+                
+                <div class="metric-card">
+                    <div class="metric-label">IF Skills</div>
+                    <div class="metric-value">{{ report.islamic_finance.if_skills }}</div>
+                    <div class="metric-subtext">Candidates with IF skills</div>
+                </div>
+            </div>
+            
+            <!-- IF BREAKDOWN CHART -->
+            <div class="chart-container" style="max-width: 500px; margin: 20px auto;">
+                <canvas id="ifBreakdownChart"></canvas>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Top Skills -->
+        <div class="section">
+            <div class="section-header">
+                <h2>Top Skills in Candidate Pool</h2>
+            </div>
+            
+            <div class="chart-grid">
+                <div class="chart-box">
+                    <h3>Most Common Skills</h3>
+                    <div class="chart-container">
+                        <canvas id="topSkillsChart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="chart-box">
+                    <h3>Skill Frequency</h3>
+                    <ul class="skills-list">
+                        {% for skill in report.top_skills %}
+                        <li class="skill-item">
+                            <span class="skill-name">{{ skill.skill_name }}</span>
+                            <span class="skill-count">{{ skill.count }}</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Education & Experience -->
+        <div class="section">
+            <div class="section-header">
+                <h2>Education & Experience Distribution</h2>
+            </div>
+            
+            <div class="chart-grid">
+                <div class="chart-box">
+                    <h3>Education Level Distribution</h3>
+                    <div class="chart-container">
+                        <canvas id="educationChart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="chart-box">
+                    <h3>Years of Experience Distribution</h3>
+                    <div class="chart-container">
+                        <canvas id="experienceChart"></canvas>
+                    </div>
+                    <div style="text-align: center; margin-top: 10px;">
+                        <strong>Average:</strong> {{ report.experience_analysis.average_years }} years
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="timestamp">
+             Generated: {{ report.generated_at }}
+        </div>
+    </div>
+    
+    <script>
+        // Chart.js Global Configuration
+        Chart.defaults.font.family = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
+        Chart.defaults.color = '#666';
+        
+        // Color Palette
+        const colors = {
+            primary: '#667eea',
+            secondary: '#764ba2',
+            success: '#28a745',
+            warning: '#ffc107',
+            danger: '#dc3545',
+            info: '#17a2b8'
+        };
+        
+        // 1. FUNNEL CHART
+        {% if report.hiring_funnel.status != 'no_data' %}
+        new Chart(document.getElementById('funnelChart'), {
+            type: 'bar',
+            data: {
+                labels: ['Received', 'Screening', 'Interview', 'Offered', 'Hired'],
+                datasets: [{
+                    label: 'Candidates',
+                    data: [
+                        {{ report.hiring_funnel.received }},
+                        {{ report.hiring_funnel.screening }},
+                        {{ report.hiring_funnel.interview }},
+                        {{ report.hiring_funnel.offered }},
+                        {{ report.hiring_funnel.hired }}
+                    ],
+                    backgroundColor: [
+                        colors.info,
+                        colors.warning,
+                        colors.primary,
+                        colors.secondary,
+                        colors.success
+                    ],
+                    borderRadius: 5
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    title: {
+                        display: true,
+                        text: 'Hiring Funnel Progression'
+                    }
+                },
+                scales: {
+                    x: { beginAtZero: true }
+                }
+            }
+        });
+        {% endif %}
+        
+        // 2. SCORE DISTRIBUTION CHART
+        {% if report.score_statistics.status != 'no_data' %}
+        new Chart(document.getElementById('scoreDistChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Excellent (80-100)', 'Good (60-79)', 'Average (40-59)', 'Below Avg (<40)'],
+                datasets: [{
+                    data: [
+                        {{ report.score_statistics.distribution.excellent }},
+                        {{ report.score_statistics.distribution.good }},
+                        {{ report.score_statistics.distribution.average }},
+                        {{ report.score_statistics.distribution.below_average }}
+                    ],
+                    backgroundColor: [colors.success, colors.info, colors.warning, colors.danger],
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
+        });
+        
+        // 3. SCORE BREAKDOWN CHART
+        new Chart(document.getElementById('scoreBreakdownChart'), {
+            type: 'radar',
+            data: {
+                labels: ['Education', 'Experience', 'Skills', 'Islamic Finance'],
+                datasets: [{
+                    label: 'Average Scores',
+                    data: [
+                        {{ report.score_statistics.avg_education|default:0 }},
+                        {{ report.score_statistics.avg_experience|default:0 }},
+                        {{ report.score_statistics.avg_skills|default:0 }},
+                        {{ report.score_statistics.avg_if|default:0 }}
+                    ],
+                    backgroundColor: 'rgba(102, 126, 234, 0.2)',
+                    borderColor: colors.primary,
+                    pointBackgroundColor: colors.primary,
+                    pointBorderColor: '#fff',
+                    pointHoverBackgroundColor: '#fff',
+                    pointHoverBorderColor: colors.primary
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    r: {
+                        beginAtZero: true,
+                        max: 100
+                    }
+                }
+            }
+        });
+        {% endif %}
+        
+        // 4. ISLAMIC FINANCE BREAKDOWN
+        {% if report.islamic_finance.status != 'no_data' %}
+        new Chart(document.getElementById('ifBreakdownChart'), {
+            type: 'pie',
+            data: {
+                labels: ['IF Education', 'IF Experience', 'IF Skills'],
+                datasets: [{
+                    data: [
+                        {{ report.islamic_finance.if_education }},
+                        {{ report.islamic_finance.if_experience }},
+                        {{ report.islamic_finance.if_skills }}
+                    ],
+                    backgroundColor: [colors.success, colors.info, colors.warning],
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom' },
+                    title: {
+                        display: true,
+                        text: 'Islamic Finance Expertise Breakdown'
+                    }
+                }
+            }
+        });
+        {% endif %}
+        
+        // 5. TOP SKILLS CHART
+        new Chart(document.getElementById('topSkillsChart'), {
+            type: 'bar',
+            data: {
+                labels: [
+                    {% for skill in report.top_skills %}'{{ skill.skill_name }}'{% if not forloop.last %},{% endif %}{% endfor %}
+                ],
+                datasets: [{
+                    label: 'Frequency',
+                    data: [
+                        {% for skill in report.top_skills %}{{ skill.count }}{% if not forloop.last %},{% endif %}{% endfor %}
+                    ],
+                    backgroundColor: colors.primary,
+                    borderRadius: 5
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+        
+        // 6. EDUCATION DISTRIBUTION
+        new Chart(document.getElementById('educationChart'), {
+            type: 'pie',
+            data: {
+                labels: [
+                    {% for edu in report.education_analysis.breakdown %}'{{ edu.degree }}'{% if not forloop.last %},{% endif %}{% endfor %}
+                ],
+                datasets: [{
+                    data: [
+                        {% for edu in report.education_analysis.breakdown %}{{ edu.count }}{% if not forloop.last %},{% endif %}{% endfor %}
+                    ],
+                    backgroundColor: [colors.primary, colors.secondary, colors.success, colors.info, colors.warning],
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
+        });
+        
+        // 7. EXPERIENCE DISTRIBUTION
+        new Chart(document.getElementById('experienceChart'), {
+            type: 'bar',
+            data: {
+                labels: ['Entry (<2y)', 'Junior (2-5y)', 'Mid (5-10y)', 'Senior (10+y)'],
+                datasets: [{
+                    label: 'Candidates',
+                    data: [
+                        {{ report.experience_analysis.entry_level.count }},
+                        {{ report.experience_analysis.junior.count }},
+                        {{ report.experience_analysis.mid_level.count }},
+                        {{ report.experience_analysis.senior.count }}
+                    ],
+                    backgroundColor: [colors.info, colors.warning, colors.primary, colors.success],
+                    borderRadius: 5
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

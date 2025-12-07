@@ -1,5 +1,8 @@
 from django.contrib import admin
-from .models import Candidate, Resume, Education, Experience, Skill, Score, WorkflowEvent
+from .models import Candidate, JobRoleProfile, Resume, Education, Experience, Skill, Score, WorkflowEvent, JobPosting, CandidateJobApplication
+
+
+
 @admin.register(Candidate)
 class CandidateAdmin(admin.ModelAdmin):
     list_display = [
@@ -108,3 +111,59 @@ class WorkflowEventAdmin(admin.ModelAdmin):
             'fields': ('notes', 'created_by', 'created_at')
         }),
     )
+
+@admin.register(JobPosting)
+class JobPostingAdmin(admin.ModelAdmin):
+    list_display = ['title', 'department', 'min_years_experience', 'is_active', 'created_at']
+    list_filter = ['is_active', 'department', 'created_at']
+    search_fields = ['title', 'department', 'description']
+    
+    fieldsets = (
+        ('Job Details', {
+            'fields': ('title', 'department', 'description', 'is_active')
+        }),
+        ('Requirements', {
+            'fields': ('required_skills', 'preferred_skills', 'min_years_experience', 
+                      'max_years_experience', 'min_education_level', 'required_certifications',
+                      'special_requirements'),
+            'description': '''
+            <strong>How to enter skills:</strong><br>
+            Format: ["skill1", "skill2", "skill3"]<br>
+            Example: ["python", "financial modeling", "excel", "portfolio management"]<br>
+            <em>Make sure to use double quotes and square brackets!</em>
+            '''
+        }),
+        ('Scoring Weights', {
+            'fields': ('education_weight', 'experience_weight', 'skills_weight', 
+                      'islamic_finance_weight', 'hard_skills_weight', 'soft_skills_weight'),
+            'description': 'Customize scoring weights for this position. Default: Education 25%, Experience 30%, Skills 25%, Islamic Finance 20%'
+        }),
+        ('Metadata', {
+            'fields': ('created_by', 'created_at')
+        })
+    )
+    
+    readonly_fields = ['created_at']
+
+@admin.register(JobRoleProfile)
+class JobRoleProfileAdmin(admin.ModelAdmin):
+    list_display = ['name', 'profile_type', 'education_weight', 'experience_weight', 
+                   'skills_weight', 'islamic_finance_weight', 'is_system_default']
+    list_filter = ['profile_type', 'is_system_default', 'is_active']
+    search_fields = ['name', 'description']
+    
+    fieldsets = (
+        ('Profile Information', {
+            'fields': ('name', 'profile_type', 'description', 'is_active')
+        }),
+        ('Scoring Weights', {
+            'fields': ('education_weight', 'experience_weight', 'skills_weight', 'islamic_finance_weight'),
+            'description': 'Weights must sum to 1.0 (100%)'
+        }),
+        ('Metadata', {
+            'fields': ('is_system_default', 'created_at'),
+            'classes': ('collapse',)
+        })
+    )
+    
+    readonly_fields = ['created_at']

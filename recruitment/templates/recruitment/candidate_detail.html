@@ -172,7 +172,6 @@
             font-size: 36px;
         }
         
-        /* Detailed Analysis Styles */
         .analysis-section {
             margin-bottom: 35px;
             padding: 25px;
@@ -307,6 +306,67 @@
             font-size: 20px;
             color: #ffd700;
         }
+
+        /* Job Application Styles */
+        .job-application-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border-left: 4px solid #667eea;
+        }
+
+        .job-title {
+            color: #667eea;
+            font-size: 20px;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+
+        .job-info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .profile-badge {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .fit-score {
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .fit-score.high {
+            color: #28a745;
+        }
+
+        .fit-score.medium {
+            color: #ffc107;
+        }
+
+        .fit-score.low {
+            color: #dc3545;
+        }
+
+        .weights-display {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .weights-display small {
+            color: #666;
+            font-size: 13px;
+        }
     </style>
 </head>
 <body>
@@ -338,6 +398,51 @@
             </div>
         </div>
         
+        <!-- JOB APPLICATION SECTION - FIXED! -->
+        {% if job_applications %}
+        <div class="info-section">
+            <h2>📋 Job Application</h2>
+            {% for application in job_applications %}
+            <div class="job-application-card">
+                <h3 class="job-title">{{ application.job_posting.title }}</h3>
+                <div class="job-info-grid">
+                    <div class="info-item">
+                        <span class="info-label">Department</span>
+                        <span class="info-value">{{ application.job_posting.department }}</span>
+                    </div>
+                    {% if application.job_posting.role_profile %}
+                    <div class="info-item">
+                        <span class="info-label">Role Profile</span>
+                        <span class="profile-badge">{{ application.job_posting.role_profile.name }}</span>
+                    </div>
+                    {% endif %}
+                    <div class="info-item">
+                        <span class="info-label">Applied</span>
+                        <span class="info-value">{{ application.applied_at|date:"M d, Y H:i" }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Job Fit Score</span>
+                        <span class="fit-score {% if application.job_fit_score >= 70 %}high{% elif application.job_fit_score >= 50 %}medium{% else %}low{% endif %}">
+                            {{ application.job_fit_score }}/100
+                        </span>
+                    </div>
+                </div>
+                
+                <!-- FIXED WEIGHT DISPLAY -->
+                <div class="weights-display">
+                    <small>
+                        <strong>Custom Scoring Weights:</strong>
+                        Education {% widthratio application.job_posting.education_weight 1 100 %}% | 
+                        Experience {% widthratio application.job_posting.experience_weight 1 100 %}% | 
+                        Skills {% widthratio application.job_posting.skills_weight 1 100 %}% | 
+                        Islamic Finance {% widthratio application.job_posting.islamic_finance_weight 1 100 %}%
+                    </small>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        
         {% if candidate.resume %}
         <div class="info-section">
             <h2>Resume Details</h2>
@@ -357,7 +462,6 @@
         <div class="info-section">
             <h2>AI Score Breakdown</h2>
             
-            <!-- Score Overview Grid -->
             <div class="score-grid">
                 <div class="score-card">
                     <div class="score-label">Education Score</div>
@@ -398,16 +502,13 @@
             </div>
         </div>
         
-        <!-- DETAILED BREAKDOWN WITH GREEN/RED INDICATORS -->
         <div class="info-section">
             <h2>📋 Detailed Score Analysis</h2>
             
-            <!-- Education Breakdown -->
             <div class="analysis-section">
                 <h3 class="analysis-title">🎓 Education (Weight: 25%)</h3>
                 
                 <div class="attributes-grid">
-                    <!-- What they HAVE -->
                     {% if candidate.education.exists %}
                         {% for edu in candidate.education.all %}
                             <div class="attribute-item matched">
@@ -430,7 +531,6 @@
                         </div>
                     {% endif %}
                     
-                    <!-- What they're MISSING -->
                     {% if candidate.score.education_score < 100 %}
                         <div class="attribute-item missing">
                             <span class="attribute-icon">✗</span>
@@ -443,12 +543,10 @@
                 </div>
             </div>
             
-            <!-- Experience Breakdown -->
             <div class="analysis-section">
                 <h3 class="analysis-title">💼 Experience (Weight: 30%)</h3>
                 
                 <div class="attributes-grid">
-                    <!-- What they HAVE -->
                     <div class="attribute-item matched">
                         <span class="attribute-icon">✓</span>
                         <div class="attribute-content">
@@ -470,7 +568,6 @@
                         {% endfor %}
                     {% endif %}
                     
-                    <!-- What they're MISSING -->
                     {% if candidate.years_experience < 10 %}
                         <div class="attribute-item missing">
                             <span class="attribute-icon">✗</span>
@@ -480,25 +577,13 @@
                             </div>
                         </div>
                     {% endif %}
-                    
-                    {% if candidate.score.experience_score < 95 %}
-                        <div class="attribute-item missing">
-                            <span class="attribute-icon">✗</span>
-                            <div class="attribute-content">
-                                <strong>Missing: Islamic Finance work experience</strong>
-                                <span class="improvement-hint">Experience at Islamic bank/finance institution adds +15 bonus points</span>
-                            </div>
-                        </div>
-                    {% endif %}
                 </div>
             </div>
             
-            <!-- Skills Breakdown -->
             <div class="analysis-section">
                 <h3 class="analysis-title">🛠️ Skills (Weight: 25%)</h3>
                 
                 <div class="attributes-grid">
-                    <!-- What they HAVE -->
                     {% if candidate.skills.exists %}
                         <div class="attribute-item matched">
                             <span class="attribute-icon">✓</span>
@@ -523,17 +608,6 @@
                         </div>
                     {% endif %}
                     
-                    <!-- What they're MISSING -->
-                    {% if candidate.skills.count < 10 %}
-                        <div class="attribute-item missing">
-                            <span class="attribute-icon">✗</span>
-                            <div class="attribute-content">
-                                <strong>Missing: 10+ diverse skills for maximum score</strong>
-                                <span class="improvement-hint">Currently have {{ candidate.skills.count }} skills - add financial modeling, Bloomberg, Python, Excel, etc.</span>
-                            </div>
-                        </div>
-                    {% endif %}
-                    
                     {% if candidate.score.skills_score < 100 %}
                         <div class="attribute-item missing">
                             <span class="attribute-icon">✗</span>
@@ -546,12 +620,10 @@
                 </div>
             </div>
             
-            <!-- Islamic Finance Breakdown -->
             <div class="analysis-section">
                 <h3 class="analysis-title">☪️ Islamic Finance Expertise (Weight: 20%)</h3>
                 
                 <div class="attributes-grid">
-                    <!-- What they HAVE -->
                     {% if candidate.score.islamic_finance_score >= 40 %}
                         <div class="attribute-item matched">
                             <span class="attribute-icon">✓</span>
@@ -578,14 +650,6 @@
                                 <span class="bonus-badge">+30 points</span>
                             </div>
                         </div>
-                    {% elif candidate.score.islamic_finance_score >= 40 %}
-                        <div class="attribute-item missing">
-                            <span class="attribute-icon">✗</span>
-                            <div class="attribute-content">
-                                <strong>No Islamic Finance Work Experience</strong>
-                                <span class="improvement-hint">Experience at Islamic bank/finance institution worth +30 points</span>
-                            </div>
-                        </div>
                     {% endif %}
                     
                     {% if candidate.score.islamic_finance_score >= 90 %}
@@ -596,17 +660,8 @@
                                 <span class="bonus-badge">Bonus points</span>
                             </div>
                         </div>
-                    {% elif candidate.score.islamic_finance_score < 100 %}
-                        <div class="attribute-item missing">
-                            <span class="attribute-icon">✗</span>
-                            <div class="attribute-content">
-                                <strong>Missing: Islamic Finance specific skills</strong>
-                                <span class="improvement-hint">Skills like Sukuk, Takaful, Mudarabah worth up to +20 points</span>
-                            </div>
-                        </div>
                     {% endif %}
                     
-                    <!-- Summary -->
                     {% if candidate.score.islamic_finance_score < 100 %}
                         <div class="attribute-item missing">
                             <span class="attribute-icon">✗</span>
@@ -619,7 +674,6 @@
                 </div>
             </div>
             
-            <!-- Scoring Formula -->
             <div class="formula-box">
                 <h4>📊 Scoring Formula</h4>
                 <div class="formula">

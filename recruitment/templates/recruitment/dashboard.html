@@ -299,7 +299,9 @@
     </div>
     
     <div class="container">
-        <a href="{% url 'upload_resume' %}" class="btn btn-upload">➕ Upload New Resume</a>
+        {% if perms.recruitment.add_candidate %}
+            <a href="{% url 'upload_resume' %}" class="btn">📤 Upload New CV</a>
+        {% endif %}
         
         <!-- Statistics Cards -->
         <div class="stats-grid">

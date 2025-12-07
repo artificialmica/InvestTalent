@@ -8,9 +8,15 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     
     # Main pages
-    path('', views.upload_resume, name='upload_resume'),
-    path('dashboard/', views.dashboard, name='dashboard'),
-    path('candidate/<int:pk>/', views.candidate_detail, name='candidate_detail'),
+    path('', views.dashboard, name='dashboard'),
+    path('upload/', views.upload_resume, name='upload_resume'),
+    path('candidate/<int:candidate_id>/', views.candidate_detail, name='candidate_detail'),
+    
+    # Job Postings
+    path('jobs/create/', views.create_job_posting, name='create_job_posting'),
+    path('jobs/<int:job_id>/', views.job_posting_detail, name='job_posting_detail'),
+    path('candidate/<int:candidate_id>/apply/<int:job_id>/', views.apply_candidate_to_job, name='apply_to_job'),
+    path('api/skill-variations/', views.skill_variations, name='skill_variations'),
     
     # Analytics & Reports
     path('analytics/', views.analytics_dashboard, name='analytics_dashboard'),
@@ -19,15 +25,16 @@ urlpatterns = [
     path('export-report/', views.export_analytics_report, name='export_report'),
     
     # Actions
-    path('candidate/<int:pk>/update-status/', views.update_candidate_status, name='update_status'),
+    path('candidate/<int:candidate_id>/update-status/', views.update_candidate_status, name='update_status'),
+    path('compare/', views.compare_candidates, name='compare_candidates'),
     
     # API Endpoints
     path('api/analytics/', views.api_analytics_summary, name='api_analytics'),
     path('api/fairness/', views.api_fairness_report, name='api_fairness'),
     path('api/workflow/', views.api_workflow_report, name='api_workflow'),
     path('api/health/', views.api_system_health, name='api_health'),
-    path('api/candidate/<int:pk>/timeline/', views.api_candidate_timeline, name='api_timeline'),
-    path('debug/<int:pk>/', views.debug_resume, name='debug_resume'),
+    path('api/candidate/<int:candidate_id>/timeline/', views.api_candidate_timeline, name='api_timeline'),
+    path('debug/<int:candidate_id>/', views.debug_resume, name='debug_resume'),
 ]
 
 if settings.DEBUG:

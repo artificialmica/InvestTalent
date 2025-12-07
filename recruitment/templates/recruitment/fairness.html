@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fairness Report - InvestTalent-AI</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f7fa;
+        }
+        
+        .navbar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 40px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .navbar h1 {
+            font-size: 28px;
+            margin-bottom: 5px;
+        }
+        
+        .nav-links {
+            margin-top: 15px;
+        }
+        
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            margin-right: 20px;
+            opacity: 0.9;
+            font-size: 14px;
+        }
+        
+        .nav-links a:hover {
+            opacity: 1;
+            text-decoration: underline;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 30px 40px;
+        }
+        
+        .alert {
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .alert-success {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            color: #155724;
+        }
+        
+        .alert-warning {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            color: #856404;
+        }
+        
+        .alert-danger {
+            background: #f8d7da;
+            border-left: 4px solid #dc3545;
+            color: #721c24;
+        }
+        
+        .alert-info {
+            background: #d1ecf1;
+            border-left: 4px solid #17a2b8;
+            color: #0c5460;
+        }
+        
+        .grade-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            font-size: 32px;
+            font-weight: bold;
+            color: white;
+        }
+        
+        .grade-a { background: #28a745; }
+        .grade-b { background: #5cb85c; }
+        .grade-c { background: #ffc107; color: #333; }
+        .grade-d { background: #ff9800; }
+        .grade-f { background: #dc3545; }
+        
+        .section {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            margin-bottom: 25px;
+        }
+        
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        
+        .section-header h2 {
+            color: #333;
+            font-size: 22px;
+        }
+        
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+        
+        .metric-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .metric-label {
+            font-size: 13px;
+            color: #666;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+        
+        .metric-value {
+            font-size: 32px;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .metric-subtext {
+            font-size: 12px;
+            color: #999;
+            margin-top: 5px;
+        }
+        
+        .distribution-chart {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .distribution-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .dist-label {
+            min-width: 120px;
+            font-size: 14px;
+            color: #333;
+            font-weight: 600;
+        }
+        
+        .dist-bar {
+            flex: 1;
+            background: #e0e0e0;
+            height: 30px;
+            border-radius: 15px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .dist-fill {
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 10px;
+            color: white;
+            font-size: 13px;
+            font-weight: 600;
+        }
+        
+        .issue-list {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .issue-item {
+            padding: 15px;
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            margin-bottom: 15px;
+            border-radius: 5px;
+        }
+        
+        .issue-item h4 {
+            color: #856404;
+            margin-bottom: 8px;
+            font-size: 16px;
+        }
+        
+        .issue-item p {
+            color: #856404;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        
+        .issue-severity {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-left: 10px;
+        }
+        
+        .severity-high {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .severity-medium {
+            background: #ffc107;
+            color: #333;
+        }
+        
+        .severity-low {
+            background: #28a745;
+            color: white;
+        }
+        
+        .recommendations {
+            background: #e7f3ff;
+            border-left: 4px solid #2196F3;
+            padding: 20px;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+        
+        .recommendations h3 {
+            color: #0d47a1;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+        
+        .recommendations ul {
+            padding-left: 20px;
+        }
+        
+        .recommendations li {
+            color: #0d47a1;
+            margin-bottom: 10px;
+            line-height: 1.6;
+        }
+        
+        .keyword-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        
+        .keyword-table th {
+            background: #f8f9fa;
+            padding: 12px;
+            text-align: left;
+            font-size: 13px;
+            color: #666;
+            text-transform: uppercase;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        
+        .keyword-table td {
+            padding: 12px;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 14px;
+        }
+        
+        .keyword-table tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .timestamp {
+            text-align: right;
+            color: #999;
+            font-size: 13px;
+            margin-top: 20px;
+        }
+        
+        .no-data {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+        
+        .no-data h3 {
+            margin-bottom: 10px;
+            font-size: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <h1>Fairness Report</h1>
+        <div class="nav-links">
+            <a href="{% url 'dashboard' %}">← Dashboard</a>
+            <a href="{% url 'candidate_list' %}">All Candidates</a>
+            <a href="{% url 'analytics_dashboard' %}">Analytics</a>
+        </div>
+    </div>
+    
+    <div class="container">
+        {% if report.overall_fairness_grade %}
+        <!-- Overall Fairness Grade -->
+        <div class="alert alert-{% if report.overall_fairness_grade == 'A' or report.overall_fairness_grade == 'B' %}success{% elif report.overall_fairness_grade == 'C' %}warning{% else %}danger{% endif %}">
+            <div class="grade-badge grade-{{ report.overall_fairness_grade|lower }}">
+                {{ report.overall_fairness_grade }}
+            </div>
+            <div>
+                <h3 style="margin-bottom: 5px;">Overall Fairness Grade: {{ report.overall_fairness_grade }}</h3>
+                <p style="margin: 0;">
+                    {% if report.overall_fairness_grade == 'A' %}
+                        Excellent fairness! The system shows minimal bias across all metrics.
+                    {% elif report.overall_fairness_grade == 'B' %}
+                        Good fairness with minor areas for improvement.
+                    {% elif report.overall_fairness_grade == 'C' %}
+                        Moderate fairness. Some bias patterns detected that need attention.
+                    {% elif report.overall_fairness_grade == 'D' %}
+                        Below average fairness. Significant bias issues need to be addressed.
+                    {% else %}
+                        Poor fairness. Critical bias issues detected requiring immediate action.
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+        
+        <!-- Score Distribution Analysis -->
+        <div class="section">
+            <div class="section-header">
+                <h2>Score Distribution Analysis</h2>
+            </div>
+            
+            {% if report.score_distribution.status == 'no_data' %}
+            <div class="no-data">
+                <h3>{{ report.score_distribution.message }}</h3>
+            </div>
+            {% else %}
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-label">Mean Score</div>
+                    <div class="metric-value">{{ report.score_distribution.mean|floatformat:1 }}</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Median Score</div>
+                    <div class="metric-value">{{ report.score_distribution.median|floatformat:1 }}</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Std Deviation</div>
+                    <div class="metric-value">{{ report.score_distribution.std_dev|floatformat:1 }}</div>
+                    <div class="metric-subtext">Lower is more consistent</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Score Range</div>
+                    <div class="metric-value">{{ report.score_distribution.min|floatformat:0 }}-{{ report.score_distribution.max|floatformat:0 }}</div>
+                </div>
+            </div>
+            
+            <h3 style="margin: 25px 0 15px; color: #333;">Distribution by Range</h3>
+            <div class="distribution-chart">
+                <div class="distribution-item">
+                    <div class="dist-label">0-20</div>
+                    <div class="dist-bar">
+                        <div class="dist-fill" style="width: {% widthratio report.score_distribution.ranges.0_20 report.score_distribution.total 100 %}%; background: #ef5350;">
+                            {{ report.score_distribution.ranges.0_20 }} candidates
+                        </div>
+                    </div>
+                </div>
+                <div class="distribution-item">
+                    <div class="dist-label">21-40</div>
+                    <div class="dist-bar">
+                        <div class="dist-fill" style="width: {% widthratio report.score_distribution.ranges.21_40 report.score_distribution.total 100 %}%; background: #ff9800;">
+                            {{ report.score_distribution.ranges.21_40 }} candidates
+                        </div>
+                    </div>
+                </div>
+                <div class="distribution-item">
+                    <div class="dist-label">41-60</div>
+                    <div class="dist-bar">
+                        <div class="dist-fill" style="width: {% widthratio report.score_distribution.ranges.41_60 report.score_distribution.total 100 %}%; background: #ffc107;">
+                            {{ report.score_distribution.ranges.41_60 }} candidates
+                        </div>
+                    </div>
+                </div>
+                <div class="distribution-item">
+                    <div class="dist-label">61-80</div>
+                    <div class="dist-bar">
+                        <div class="dist-fill" style="width: {% widthratio report.score_distribution.ranges.61_80 report.score_distribution.total 100 %}%;">
+                            {{ report.score_distribution.ranges.61_80 }} candidates
+                        </div>
+                    </div>
+                </div>
+                <div class="distribution-item">
+                    <div class="dist-label">81-100</div>
+                    <div class="dist-bar">
+                        <div class="dist-fill" style="width: {% widthratio report.score_distribution.ranges.81_100 report.score_distribution.total 100 %}%; background: #28a745;">
+                            {{ report.score_distribution.ranges.81_100 }} candidates
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            {% if report.score_distribution.is_fair %}
+            <div class="alert alert-success" style="margin-top: 20px;">
+                <strong>Fair Distribution:</strong> Score distribution appears balanced with acceptable standard deviation ({{ report.score_distribution.std_dev|floatformat:1 }}).
+            </div>
+            {% else %}
+            <div class="alert alert-warning" style="margin-top: 20px;">
+                <strong>Uneven Distribution:</strong> High standard deviation ({{ report.score_distribution.std_dev|floatformat:1 }}) suggests potential scoring inconsistencies.
+            </div>
+            {% endif %}
+            {% endif %}
+        </div>
+        
+        <!-- Keyword Bias Detection -->
+        <div class="section">
+            <div class="section-header">
+                <h2>Keyword Bias Detection</h2>
+            </div>
+            
+            {% if report.keyword_bias.status == 'no_data' %}
+            <div class="no-data">
+                <h3>{{ report.keyword_bias.message }}</h3>
+            </div>
+            {% else %}
+            
+            {% if report.keyword_bias.issues %}
+            <div class="alert alert-warning">
+                <div>
+                    <strong>Bias Issues Detected:</strong> {{ report.keyword_bias.issues|length }} potential keyword stuffing or bias pattern(s) found.
+                </div>
+            </div>
+            
+            <ul class="issue-list">
+                {% for issue in report.keyword_bias.issues %}
+                <li class="issue-item">
+                    <h4>
+                        {{ issue.keyword|title }}
+                        <span class="issue-severity severity-{{ issue.severity }}">{{ issue.severity }}</span>
+                    </h4>
+                    <p><strong>Frequency:</strong> {{ issue.count }} occurrences ({{ issue.density|floatformat:1 }}% density)</p>
+                    <p>{{ issue.message }}</p>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <div class="alert alert-success">
+                <strong>No Bias Detected:</strong> Keyword analysis shows no concerning patterns of keyword stuffing or manipulation.
+            </div>
+            {% endif %}
+            
+            <h3 style="margin: 25px 0 15px; color: #333;">Keyword Frequency Analysis</h3>
+            <table class="keyword-table">
+                <thead>
+                    <tr>
+                        <th>Keyword</th>
+                        <th>Occurrences</th>
+                        <th>Density</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for keyword in report.keyword_bias.top_keywords %}
+                    <tr>
+                        <td><strong>{{ keyword.keyword|title }}</strong></td>
+                        <td>{{ keyword.count }}</td>
+                        <td>{{ keyword.density|floatformat:2 }}%</td>
+                        <td>
+                            {% if keyword.is_suspicious %}
+                            <span style="color: #dc3545; font-weight: 600;">Suspicious</span>
+                            {% else %}
+                            <span style="color: #28a745; font-weight: 600;">Normal</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% endif %}
+        </div>
+        
+        <!-- Experience Bias Check -->
+        <div class="section">
+            <div class="section-header">
+                <h2>Experience Bias Analysis</h2>
+            </div>
+            
+            {% if report.experience_bias.status == 'no_data' %}
+            <div class="no-data">
+                <h3>{{ report.experience_bias.message }}</h3>
+            </div>
+            {% else %}
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-label">Avg Score (Entry Level)</div>
+                    <div class="metric-value">{{ report.experience_bias.entry_level_avg|floatformat:1 }}</div>
+                    <div class="metric-subtext">{{ report.experience_bias.entry_level_count }} candidates</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Avg Score (Mid Level)</div>
+                    <div class="metric-value">{{ report.experience_bias.mid_level_avg|floatformat:1 }}</div>
+                    <div class="metric-subtext">{{ report.experience_bias.mid_level_count }} candidates</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Avg Score (Senior)</div>
+                    <div class="metric-value">{{ report.experience_bias.senior_avg|floatformat:1 }}</div>
+                    <div class="metric-subtext">{{ report.experience_bias.senior_count }} candidates</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Score Variance</div>
+                    <div class="metric-value">{{ report.experience_bias.score_variance|floatformat:1 }}</div>
+                    <div class="metric-subtext">Between experience levels</div>
+                </div>
+            </div>
+            
+            {% if report.experience_bias.is_fair %}
+            <div class="alert alert-success" style="margin-top: 20px;">
+                <strong>Fair Experience Evaluation:</strong> Score variance ({{ report.experience_bias.score_variance|floatformat:1 }}) is within acceptable range, suggesting no systematic bias against specific experience levels.
+            </div>
+            {% else %}
+            <div class="alert alert-warning" style="margin-top: 20px;">
+                <strong>Experience Bias Detected:</strong> Significant score variance ({{ report.experience_bias.score_variance|floatformat:1 }}) between experience levels may indicate systematic bias.
+            </div>
+            {% endif %}
+            {% endif %}
+        </div>
+        
+        <!-- Recommendations -->
+        {% if not report.score_distribution.is_fair or report.keyword_bias.issues or not report.experience_bias.is_fair %}
+        <div class="section">
+            <div class="recommendations">
+                <h3>Recommendations for Improvement</h3>
+                <ul>
+                    {% if not report.score_distribution.is_fair %}
+                    <li><strong>Score Consistency:</strong> Review scoring algorithm weights to reduce standard deviation and ensure more consistent evaluation across candidates.</li>
+                    {% endif %}
+                    
+                    {% if report.keyword_bias.issues %}
+                    <li><strong>Keyword Stuffing:</strong> Implement additional validation to detect and flag candidates who may be artificially inflating their scores through keyword repetition.</li>
+                    <li><strong>Natural Language Processing:</strong> Consider using semantic analysis instead of pure keyword matching to better understand candidate qualifications.</li>
+                    {% endif %}
+                    
+                    {% if not report.experience_bias.is_fair %}
+                    <li><strong>Experience Weighting:</strong> Adjust experience scoring to ensure fair evaluation across all experience levels. Consider role-specific requirements rather than blanket experience preferences.</li>
+                    {% endif %}
+                    
+                    <li><strong>Regular Monitoring:</strong> Conduct fairness audits monthly to track improvements and identify new bias patterns early.</li>
+                    <li><strong>Diverse Test Data:</strong> Test the system with diverse candidate profiles to ensure fair treatment across different backgrounds and experience levels.</li>
+                </ul>
+            </div>
+        </div>
+        {% endif %}
+        
+        <div class="timestamp">
+            Generated: {{ report.generated_at }}
+        </div>
+        
+        {% else %}
+        <!-- No Data State -->
+        <div class="section">
+            <div class="no-data">
+                <h3>No Fairness Data Available</h3>
+                <p>Upload and score candidates to generate a fairness report.</p>
+                <a href="{% url 'upload_resume' %}" style="color: #667eea; text-decoration: none; font-weight: 600;">Upload CV →</a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>

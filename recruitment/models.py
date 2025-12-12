@@ -333,3 +333,146 @@ class CandidateJobApplication(models.Model):
     
     def __str__(self):
         return f"{self.candidate.name} → {self.job_posting.title}"
+    
+    # ============================================================
+# ENTERPRISE SKILL TAXONOMY MODELS
+# ============================================================
+
+class SkillCategory(models.Model):
+    """Hierarchical skill categories"""
+    name = models.CharField(max_length=100, unique=True)
+    description = models.TextField(blank=True)
+    parent = models.ForeignKey('self', null=True, blank=True, on_delete=models.CASCADE, related_name='subcategories')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = "Skill Category"
+        verbose_name_plural = "Skill Categories"
+        ordering = ['name']
+    
+    def __str__(self):
+        return self.name
+
+
+class SkillType(models.Model):
+    """Skill types (Programming Language, Framework, Tool, etc.)"""
+    SKILL_TYPES = [
+        ('programming_language', 'Programming Language'),
+        ('framework', 'Framework'),
+        ('database', 'Database'),
+        ('cloud_service', 'Cloud Service'),
+        ('tool', 'Tool'),
+        ('protocol', 'Protocol'),
+        ('methodology', 'Methodology'),
+        ('finance_concept', 'Finance Concept'),
+        ('islamic_finance_term', 'Islamic Finance Term'),
+        ('soft_skill', 'Soft Skill'),
+        ('certification', 'Certification'),
+        ('domain_knowledge', 'Domain Knowledge'),
+    ]
+    
+    name = models.CharField(max_length=50, choices=SKILL_TYPES, unique=True)
+    description = models.TextField(blank=True)
+    
+    class Meta:
+        verbose_name = "Skill Type"
+        verbose_name_plural = "Skill Types"
+    
+    def __str__(self):
+        return self.get_name_display()
+
+
+class SkillDefinition(models.Model):
+    """Master skill definition (expandable to 35,000+)"""
+    skill_id = models.AutoField(primary_key=True)
+    canonical_name = models.CharField(max_length=200, unique=True, db_index=True)
+    category = models.ForeignKey(SkillCategory, on_delete=models.CASCADE, related_name='skills')
+    skill_type = models.ForeignKey(SkillType, on_delete=models.SET_NULL, null=True, blank=True)
+    
+    description = models.TextField(blank=True)
+    is_hard_skill = models.BooleanField(default=True)
+    importance_weight = models.FloatField(default=1.0)
+    
+    # Hierarchical relationships
+    parent_skill = models.ForeignKey('self', null=True, blank=True, on_delete=models.SET_NULL, related_name='child_skills')
+    related_skills = models.ManyToManyField('self', blank=True, symmetrical=True)
+    
+    source = models.CharField(max_length=100, blank=True)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = "Skill Definition"
+        verbose_name_plural = "Skill Definitions"
+        ordering = ['canonical_name']
+        indexes = [
+            models.Index(fields=['canonical_name']),
+            models.Index(fields=['category', 'is_active']),
+        ]
+    
+    def __str__(self):
+        return self.canonical_name
+
+
+class SkillAlias(models.Model):
+    """Skill aliases for matching variations"""
+    skill = models.ForeignKey(SkillDefinition, on_delete=models.CASCADE, related_name='aliases')
+    alias_text = models.CharField(max_length=200, db_index=True)
+    normalized_text = models.CharField(max_length=200, db_index=True)
+    
+    priority = models.IntegerField(default=1)
+    is_exact_match = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        verbose_name = "Skill Alias"
+        verbose_name_plural = "Skill Aliases"
+        unique_together = [['skill', 'normalized_text']]
+        indexes = [
+            models.Index(fields=['normalized_text']),
+        ]
+    
+    def __str__(self):
+        return f"{self.alias_text} → {self.skill.canonical_name}"
+    
+    def save(self, *args, **kwargs):
+        if not self.normalized_text:
+            self.normalized_text = self.alias_text.lower().replace("-", " ").replace(".", "").strip()
+        super().save(*args, **kwargs)
+
+
+class ExtractedSkill(models.Model):
+    """Skills extracted from resumes with metadata"""
+    candidate = models.ForeignKey(Candidate, on_delete=models.CASCADE, related_name='extracted_skills')
+    skill = models.ForeignKey(SkillDefinition, on_delete=models.CASCADE)
+    
+    source_section = models.CharField(max_length=50, choices=[
+        ('skills', 'Skills Section'),
+        ('experience', 'Work Experience'),
+        ('education', 'Education'),
+        ('certifications', 'Certifications'),
+        ('projects', 'Projects'),
+        ('other', 'Other'),
+    ])
+    
+    frequency = models.IntegerField(default=1)
+    confidence_score = models.FloatField(default=1.0)
+    
+    matched_via = models.CharField(max_length=50, choices=[
+        ('exact', 'Exact Match'),
+        ('alias', 'Alias Match'),
+        ('fuzzy', 'Fuzzy Match'),
+        ('nlp', 'NLP Extraction'),
+    ], default='exact')
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        verbose_name = "Extracted Skill"
+        verbose_name_plural = "Extracted Skills"
+        unique_together = [['candidate', 'skill']]
+    
+    def __str__(self):
+        return f"{self.candidate.name} - {self.skill.canonical_name}"

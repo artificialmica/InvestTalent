@@ -584,15 +584,15 @@
                 <h3 class="analysis-title">🛠️ Skills (Weight: 25%)</h3>
                 
                 <div class="attributes-grid">
-                    {% if candidate.skills.exists %}
+                    {% if candidate.extracted_skills.exists %}
                         <div class="attribute-item matched">
                             <span class="attribute-icon">✓</span>
                             <div class="attribute-content">
-                                <strong>{{ candidate.skills.count }} skills detected:</strong>
+                                <strong>{{ candidate.extracted_skills.count }} skills detected:</strong>
                                 <div class="skills-list">
-                                    {% for skill in candidate.skills.all %}
+                                    {% for extracted_skill in candidate.extracted_skills.all %}
                                         <span class="skill-tag {% if skill.category == 'islamic_finance' %}if-skill{% endif %}">
-                                            {{ skill.skill_name }}
+                                            {{ extracted_skill.skill.canonical_name }}
                                         </span>
                                     {% endfor %}
                                 </div>

@@ -1,0 +1,3268 @@
+{
+  "categories": [
+    {
+      "name": "Architecture & Interior Design",
+      "certifications": [
+        {
+          "id": "arch_001",
+          "name": "LEED Green Associate",
+          "aliases": [
+            "LEED GA"
+          ],
+          "issuer": "USGBC",
+          "level": "Foundational",
+          "region": "Global",
+          "canonical_id": "leed_ga"
+        },
+        {
+          "id": "arch_002",
+          "name": "LEED Accredited Professional",
+          "aliases": [
+            "LEED AP"
+          ],
+          "issuer": "USGBC",
+          "level": "Expert",
+          "region": "Global",
+          "also_relevant_for": [
+            "Engineering"
+          ],
+          "canonical_id": "leed_ap"
+        },
+        {
+          "id": "arch_003",
+          "name": "NCARB Architectural Registration",
+          "aliases": [
+            "ARE Certification",
+            "Architect Licensure US"
+          ],
+          "issuer": "NCARB",
+          "level": "Expert",
+          "region": "US"
+        },
+        {
+          "id": "arch_004",
+          "name": "RIBA Chartered Architect",
+          "aliases": [
+            "RIBA Membership"
+          ],
+          "issuer": "Royal Institute of British Architects",
+          "level": "Professional",
+          "region": "UK / Global"
+        },
+        {
+          "id": "arch_005",
+          "name": "Certified Interior Designer",
+          "aliases": [
+            "CID"
+          ],
+          "issuer": "CIDQ / Various",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "arch_006",
+          "name": "Autodesk Certified Professional – AutoCAD for Design",
+          "aliases": [
+            "AutoCAD ACP Design"
+          ],
+          "issuer": "Autodesk",
+          "level": "Intermediate",
+          "region": "Global"
+        },
+        {
+          "id": "arch_007",
+          "name": "Autodesk Certified Professional – Revit for Architecture",
+          "aliases": [
+            "Revit Architecture ACP"
+          ],
+          "issuer": "Autodesk",
+          "level": "Intermediate",
+          "region": "Global"
+        },
+        {
+          "id": "arch_008",
+          "name": "Certified BIM Professional",
+          "aliases": [
+            "BIM Cert"
+          ],
+          "issuer": "Various Accredited Bodies",
+          "level": "Professional",
+          "region": "Global"
+        }
+      ]
+    },
+    {
+      "name": "Aviation & Aeronautics",
+      "certifications": [
+        {
+          "id": "avi_001",
+          "name": "Private Pilot License",
+          "aliases": [
+            "PPL"
+          ],
+          "issuer": "FAA / EASA",
+          "level": "Foundational",
+          "region": "Global"
+        },
+        {
+          "id": "avi_002",
+          "name": "Commercial Pilot License",
+          "aliases": [
+            "CPL"
+          ],
+          "issuer": "FAA / EASA",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "avi_003",
+          "name": "Airline Transport Pilot License",
+          "aliases": [
+            "ATPL"
+          ],
+          "issuer": "FAA / EASA",
+          "level": "Expert",
+          "region": "Global"
+        },
+        {
+          "id": "avi_004",
+          "name": "Aircraft Maintenance Engineer License",
+          "aliases": [
+            "AME",
+            "EASA Part-66"
+          ],
+          "issuer": "EASA / FAA",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "avi_005",
+          "name": "Certified Aviation Manager",
+          "aliases": [
+            "CAM"
+          ],
+          "issuer": "NBAA",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "avi_006",
+          "name": "Flight Dispatcher Certification",
+          "aliases": [
+            "Aircraft Dispatcher Cert"
+          ],
+          "issuer": "FAA",
+          "level": "Intermediate",
+          "region": "Global"
+        },
+        {
+          "id": "avi_007",
+          "name": "Aviation Safety Management Certification",
+          "aliases": [
+            "Aviation SMS Cert"
+          ],
+          "issuer": "ICAO / IATA",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "avi_008",
+          "name": "UAV / Drone Pilot Certification",
+          "aliases": [
+            "Drone License",
+            "UAV Cert"
+          ],
+          "issuer": "FAA / EASA / GCAA",
+          "level": "Foundational",
+          "region": "Global"
+        }
+      ]
+    },
+    {
+      "name": "Cloud Computing & DevOps",
+      "certifications": [
+        {
+          "id": "cloud_001",
+          "name": "AWS Certified Cloud Practitioner",
+          "aliases": [
+            "AWS CCP",
+            "Cloud Practitioner"
+          ],
+          "issuer": "Amazon Web Services",
+          "level": "Foundational",
+          "region": "Global"
+        },
+        {
+          "id": "cloud_002",
+          "name": "AWS Certified Solutions Architect Associate",
+          "aliases": [
+            "AWS SAA",
+            "Solutions Architect Associate"
+          ],
+          "issuer": "Amazon Web Services",
+          "level": "Intermediate",
+          "region": "Global"
+        },
+        {
+          "id": "cloud_003",
+          "name": "AWS Certified Solutions Architect Professional",
+          "aliases": [
+            "AWS SAP",
+            "Solutions Architect Pro"
+          ],
+          "issuer": "Amazon Web Services",
+          "level": "Expert",
+          "region": "Global"
+        },
+        {
+          "id": "cloud_004",
+          "name": "AWS Certified DevOps Engineer Professional",
+          "aliases": [
+            "AWS DOP",
+            "DevOps Engineer Pro"
+          ],
+          "issuer": "Amazon Web Services",
+          "level": "Expert",
+          "region": "Global"
+        },
+        {
+          "id": "cloud_005",
+          "name": "AWS Certified Developer Associate",
+          "aliases": [
+            "AWS CDA",
+            "Developer Associate"
+          ],
+          "issuer": "Amazon Web Services",
+          "level": "Intermediate",
+          "region": "Global"
+        },
+        {
+          "id": "cloud_006",
+          "name": "Microsoft Azure Administrator Associate",
+          "aliases": [
+            "AZ-104"
+          ],
+          "issuer": "Microsoft",
+          "level": "Intermediate",
+          "region": "Global"
+        },
+        {
+          "id": "cloud_007",
+          "name": "Microsoft Azure Solutions Architect Expert",
+          "aliases": [
+            "AZ-305",
+            "Azure Architect"
+          ],
+          "issuer": "Microsoft",
+          "level": "Expert",
+          "region": "Global"
+        },
+        {
+          "id": "cloud_008",
+          "name": "Google Associate Cloud Engineer",
+          "aliases": [
+            "ACE",
+            "GCP ACE"
+          ],
+          "issuer": "Google",
+          "level": "Intermediate",
+          "region": "Global"
+        },
+        {
+          "id": "cloud_009",
+          "name": "Google Professional Cloud Architect",
+          "aliases": [
+            "GCP PCA",
+            "Google PCA"
+          ],
+          "issuer": "Google",
+          "level": "Expert",
+          "region": "Global"
+        },
+        {
+          "id": "cloud_010",
+          "name": "Certified Kubernetes Administrator",
+          "aliases": [
+            "CKA",
+            "Kubernetes Admin"
+          ],
+          "issuer": "CNCF",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "cloud_011",
+          "name": "Certified Kubernetes Application Developer",
+          "aliases": [
+            "CKAD"
+          ],
+          "issuer": "CNCF",
+          "level": "Intermediate",
+          "region": "Global",
+          "also_relevant_for": [
+            "Software Engineering & Programming"
+          ],
+          "canonical_id": "ckad"
+        },
+        {
+          "id": "cloud_012",
+          "name": "Terraform Associate",
+          "aliases": [
+            "HashiCorp Terraform Cert"
+          ],
+          "issuer": "HashiCorp",
+          "level": "Foundational",
+          "region": "Global"
+        },
+        {
+          "id": "cloud_013",
+          "name": "Docker Certified Associate",
+          "aliases": [
+            "DCA"
+          ],
+          "issuer": "Docker",
+          "level": "Intermediate",
+          "region": "Global"
+        },
+        {
+          "id": "cloud_014",
+          "name": "Red Hat Certified System Administrator",
+          "aliases": [
+            "RHCSA"
+          ],
+          "issuer": "Red Hat",
+          "level": "Intermediate",
+          "region": "Global"
+        },
+        {
+          "id": "cloud_015",
+          "name": "Red Hat Certified Engineer",
+          "aliases": [
+            "RHCE"
+          ],
+          "issuer": "Red Hat",
+          "level": "Expert",
+          "region": "Global"
+        }
+      ]
+    },
+    {
+      "name": "Cybersecurity",
+      "certifications": [
+        {
+          "id": "cyber_001",
+          "name": "CompTIA Security+",
+          "aliases": [
+            "CompTIA Sec+",
+            "Sec+",
+            "Security Plus"
+          ],
+          "issuer": "CompTIA",
+          "level": "Foundational",
+          "region": "Global"
+        },
+        {
+          "id": "cyber_002",
+          "name": "CompTIA CySA+",
+          "aliases": [
+            "CySA Plus",
+            "Cybersecurity Analyst+"
+          ],
+          "issuer": "CompTIA",
+          "level": "Intermediate",
+          "region": "Global"
+        },
+        {
+          "id": "cyber_003",
+          "name": "CompTIA Pentest+",
+          "aliases": [
+            "CompTIA PT+",
+            "PT+",
+            "Pentest Plus"
+          ],
+          "issuer": "CompTIA",
+          "level": "Intermediate",
+          "region": "Global"
+        },
+        {
+          "id": "cyber_004",
+          "name": "Certified Ethical Hacker",
+          "aliases": [
+            "CEH",
+            "EC-Council CEH"
+          ],
+          "issuer": "EC-Council",
+          "level": "Intermediate",
+          "region": "Global"
+        },
+        {
+          "id": "cyber_005",
+          "name": "Certified Information Systems Security Professional",
+          "aliases": [
+            "CISSP"
+          ],
+          "issuer": "ISC2",
+          "level": "Expert",
+          "region": "Global"
+        },
+        {
+          "id": "cyber_006",
+          "name": "Certified Information Security Manager",
+          "aliases": [
+            "CISM"
+          ],
+          "issuer": "ISACA",
+          "level": "Expert",
+          "region": "Global"
+        },
+        {
+          "id": "cyber_007",
+          "name": "Certified Information Systems Auditor",
+          "aliases": [
+            "CISA"
+          ],
+          "issuer": "ISACA",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "cyber_008",
+          "name": "GIAC Security Essentials Certification",
+          "aliases": [
+            "GSEC"
+          ],
+          "issuer": "GIAC",
+          "level": "Intermediate",
+          "region": "Global"
+        },
+        {
+          "id": "cyber_009",
+          "name": "GIAC Penetration Tester",
+          "aliases": [
+            "GPEN"
+          ],
+          "issuer": "GIAC",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "cyber_010",
+          "name": "GIAC Certified Incident Handler",
+          "aliases": [
+            "GCIH"
+          ],
+          "issuer": "GIAC",
+          "level": "Intermediate",
+          "region": "Global"
+        },
+        {
+          "id": "cyber_011",
+          "name": "Offensive Security Certified Professional",
+          "aliases": [
+            "OSCP"
+          ],
+          "issuer": "Offensive Security",
+          "level": "Expert",
+          "region": "Global"
+        },
+        {
+          "id": "cyber_012",
+          "name": "Offensive Security Experienced Penetration Tester",
+          "aliases": [
+            "OSEP"
+          ],
+          "issuer": "Offensive Security",
+          "level": "Expert",
+          "region": "Global"
+        },
+        {
+          "id": "cyber_013",
+          "name": "Offensive Security Wireless Professional",
+          "aliases": [
+            "OSWP"
+          ],
+          "issuer": "Offensive Security",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "cyber_014",
+          "name": "AWS Security Specialty",
+          "aliases": [
+            "AWS Certified Security Specialty",
+            "AWS SCS"
+          ],
+          "issuer": "Amazon Web Services",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "cyber_015",
+          "name": "Azure Security Engineer Associate",
+          "aliases": [
+            "AZ-500",
+            "Azure SE"
+          ],
+          "issuer": "Microsoft",
+          "level": "Intermediate",
+          "region": "Global"
+        },
+        {
+          "id": "cyber_016",
+          "name": "Google Professional Cloud Security Engineer",
+          "aliases": [
+            "GCP Security Engineer",
+            "Google PCSE"
+          ],
+          "issuer": "Google",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "cyber_017",
+          "name": "Cisco CyberOps Associate",
+          "aliases": [
+            "Cisco CCOA",
+            "CyberOps"
+          ],
+          "issuer": "Cisco",
+          "level": "Foundational",
+          "region": "Global"
+        },
+        {
+          "id": "cyber_018",
+          "name": "Cisco CCNA Security",
+          "aliases": [
+            "CCNA Sec"
+          ],
+          "issuer": "Cisco",
+          "level": "Intermediate",
+          "region": "Global"
+        },
+        {
+          "id": "cyber_019",
+          "name": "Cisco CCNP Security",
+          "aliases": [
+            "CCNP Sec"
+          ],
+          "issuer": "Cisco",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "cyber_020",
+          "name": "Certified Cloud Security Professional",
+          "aliases": [
+            "CCSP"
+          ],
+          "issuer": "ISC2",
+          "level": "Expert",
+          "region": "Global"
+        },
+        {
+          "id": "cyber_021",
+          "name": "Certified Information Privacy Professional",
+          "aliases": [
+            "CIPP",
+            "CIPP/E",
+            "CIPP/US"
+          ],
+          "issuer": "IAPP",
+          "level": "Professional",
+          "region": "Global",
+          "also_relevant_for": [
+            "Legal & Compliance"
+          ],
+          "canonical_id": "cipp"
+        },
+        {
+          "id": "cyber_022",
+          "name": "Certified Information Privacy Manager",
+          "aliases": [
+            "CIPM"
+          ],
+          "issuer": "IAPP",
+          "level": "Professional",
+          "region": "Global",
+          "also_relevant_for": [
+            "Legal & Compliance"
+          ],
+          "canonical_id": "cipm"
+        },
+        {
+          "id": "cyber_023",
+          "name": "Certified in Risk and Information Systems Control",
+          "aliases": [
+            "CRISC"
+          ],
+          "issuer": "ISACA",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "cyber_024",
+          "name": "ISO/IEC 27001 Lead Implementer",
+          "aliases": [
+            "ISO 27001 LI",
+            "Lead Implementer 27001"
+          ],
+          "issuer": "Various Accredited Bodies",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "cyber_025",
+          "name": "ISO/IEC 27001 Lead Auditor",
+          "aliases": [
+            "ISO 27001 LA",
+            "Lead Auditor 27001"
+          ],
+          "issuer": "Various Accredited Bodies",
+          "level": "Expert",
+          "region": "Global"
+        },
+        {
+          "id": "cyber_026",
+          "name": "GIAC Certified Forensic Analyst",
+          "aliases": [
+            "GCFA"
+          ],
+          "issuer": "GIAC",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "cyber_027",
+          "name": "GIAC Certified Forensic Examiner",
+          "aliases": [
+            "GCFE"
+          ],
+          "issuer": "GIAC",
+          "level": "Intermediate",
+          "region": "Global"
+        },
+        {
+          "id": "cyber_028",
+          "name": "GIAC Reverse Engineering Malware",
+          "aliases": [
+            "GREM"
+          ],
+          "issuer": "GIAC",
+          "level": "Expert",
+          "region": "Global"
+        },
+        {
+          "id": "cyber_029",
+          "name": "GIAC Web Application Penetration Tester",
+          "aliases": [
+            "GWAPT"
+          ],
+          "issuer": "GIAC",
+          "level": "Intermediate",
+          "region": "Global"
+        },
+        {
+          "id": "cyber_030",
+          "name": "GIAC Exploit Researcher and Advanced Penetration Tester",
+          "aliases": [
+            "GXPN"
+          ],
+          "issuer": "GIAC",
+          "level": "Expert",
+          "region": "Global"
+        },
+        {
+          "id": "cyber_031",
+          "name": "Certified Penetration Testing Engineer",
+          "aliases": [
+            "CPTE"
+          ],
+          "issuer": "Mile2",
+          "level": "Intermediate",
+          "region": "Global"
+        },
+        {
+          "id": "cyber_032",
+          "name": "Certified Penetration Testing Consultant",
+          "aliases": [
+            "CPTC"
+          ],
+          "issuer": "Mile2",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "cyber_033",
+          "name": "EC-Council Incident Handling",
+          "aliases": [
+            "ECIH"
+          ],
+          "issuer": "EC-Council",
+          "level": "Intermediate",
+          "region": "Global"
+        },
+        {
+          "id": "cyber_034",
+          "name": "EC-Council Disaster Recovery Professional",
+          "aliases": [
+            "EDRP"
+          ],
+          "issuer": "EC-Council",
+          "level": "Intermediate",
+          "region": "Global"
+        },
+        {
+          "id": "cyber_035",
+          "name": "EC-Council Certified SOC Analyst",
+          "aliases": [
+            "CSA",
+            "EC-Council CSA"
+          ],
+          "issuer": "EC-Council",
+          "level": "Foundational",
+          "region": "Global"
+        },
+        {
+          "id": "cyber_036",
+          "name": "EC-Council Certified Threat Intelligence Analyst",
+          "aliases": [
+            "CTIA"
+          ],
+          "issuer": "EC-Council",
+          "level": "Intermediate",
+          "region": "Global"
+        },
+        {
+          "id": "cyber_037",
+          "name": "Cisco CCIE Security",
+          "aliases": [
+            "CCIE Sec"
+          ],
+          "issuer": "Cisco",
+          "level": "Expert",
+          "region": "Global"
+        },
+        {
+          "id": "cyber_038",
+          "name": "Palo Alto Networks Certified Network Security Engineer",
+          "aliases": [
+            "PCNSE"
+          ],
+          "issuer": "Palo Alto Networks",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "cyber_039",
+          "name": "Fortinet NSE 4",
+          "aliases": [
+            "Fortinet NSE4",
+            "NSE4"
+          ],
+          "issuer": "Fortinet",
+          "level": "Intermediate",
+          "region": "Global"
+        },
+        {
+          "id": "cyber_040",
+          "name": "Fortinet NSE 7",
+          "aliases": [
+            "Fortinet NSE7",
+            "NSE7"
+          ],
+          "issuer": "Fortinet",
+          "level": "Expert",
+          "region": "Global"
+        },
+        {
+          "id": "cyber_041",
+          "name": "Splunk Core Certified User",
+          "aliases": [
+            "Splunk User Cert"
+          ],
+          "issuer": "Splunk",
+          "level": "Foundational",
+          "region": "Global"
+        },
+        {
+          "id": "cyber_042",
+          "name": "Splunk Core Certified Power User",
+          "aliases": [
+            "Splunk Power User"
+          ],
+          "issuer": "Splunk",
+          "level": "Intermediate",
+          "region": "Global"
+        },
+        {
+          "id": "cyber_043",
+          "name": "Splunk Enterprise Security Certified Admin",
+          "aliases": [
+            "Splunk ES Admin"
+          ],
+          "issuer": "Splunk",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "cyber_044",
+          "name": "IBM Cybersecurity Analyst Professional Certificate",
+          "aliases": [
+            "IBM Cyber Analyst Cert"
+          ],
+          "issuer": "IBM",
+          "level": "Foundational",
+          "region": "Global"
+        },
+        {
+          "id": "cyber_045",
+          "name": "Google Cybersecurity Professional Certificate",
+          "aliases": [
+            "Google Cyber Cert"
+          ],
+          "issuer": "Google",
+          "level": "Foundational",
+          "region": "Global"
+        },
+        {
+          "id": "cyber_046",
+          "name": "Microsoft Cybersecurity Analyst",
+          "aliases": [
+            "Microsoft Cyber Analyst",
+            "SC-900"
+          ],
+          "issuer": "Microsoft",
+          "level": "Foundational",
+          "region": "Global"
+        },
+        {
+          "id": "cyber_047",
+          "name": "Microsoft Identity and Access Administrator",
+          "aliases": [
+            "SC-300"
+          ],
+          "issuer": "Microsoft",
+          "level": "Intermediate",
+          "region": "Global"
+        },
+        {
+          "id": "cyber_048",
+          "name": "Microsoft Information Protection Administrator",
+          "aliases": [
+            "SC-400"
+          ],
+          "issuer": "Microsoft",
+          "level": "Intermediate",
+          "region": "Global"
+        }
+      ]
+    },
+    {
+      "name": "Data Science & Artificial Intelligence",
+      "certifications": [
+        {
+          "id": "ds_001",
+          "name": "Google Professional Data Engineer",
+          "aliases": [
+            "GCP Data Engineer",
+            "Google PDE"
+          ],
+          "issuer": "Google",
+          "level": "Expert",
+          "region": "Global"
+        },
+        {
+          "id": "ds_002",
+          "name": "AWS Certified Machine Learning – Specialty",
+          "aliases": [
+            "AWS ML Specialty",
+            "AWS MLS"
+          ],
+          "issuer": "Amazon Web Services",
+          "level": "Expert",
+          "region": "Global"
+        },
+        {
+          "id": "ds_003",
+          "name": "Microsoft Certified: Azure Data Scientist Associate",
+          "aliases": [
+            "DP-100"
+          ],
+          "issuer": "Microsoft",
+          "level": "Intermediate",
+          "region": "Global"
+        },
+        {
+          "id": "ds_004",
+          "name": "Microsoft Certified: Azure Data Engineer Associate",
+          "aliases": [
+            "DP-203"
+          ],
+          "issuer": "Microsoft",
+          "level": "Intermediate",
+          "region": "Global"
+        },
+        {
+          "id": "ds_005",
+          "name": "IBM Data Science Professional Certificate",
+          "aliases": [
+            "IBM DS Cert"
+          ],
+          "issuer": "IBM",
+          "level": "Foundational",
+          "region": "Global"
+        },
+        {
+          "id": "ds_006",
+          "name": "IBM Machine Learning Professional Certificate",
+          "aliases": [
+            "IBM ML Cert"
+          ],
+          "issuer": "IBM",
+          "level": "Intermediate",
+          "region": "Global"
+        },
+        {
+          "id": "ds_007",
+          "name": "TensorFlow Developer Certificate",
+          "aliases": [
+            "TF Developer",
+            "TensorFlow Cert"
+          ],
+          "issuer": "Google",
+          "level": "Intermediate",
+          "region": "Global"
+        },
+        {
+          "id": "ds_008",
+          "name": "Cloudera Data Platform Generalist Certification",
+          "aliases": [
+            "CDP Generalist"
+          ],
+          "issuer": "Cloudera",
+          "level": "Intermediate",
+          "region": "Global"
+        },
+        {
+          "id": "ds_009",
+          "name": "Databricks Certified Data Engineer Associate",
+          "aliases": [
+            "Databricks DE Associate"
+          ],
+          "issuer": "Databricks",
+          "level": "Intermediate",
+          "region": "Global"
+        },
+        {
+          "id": "ds_010",
+          "name": "Databricks Certified Machine Learning Associate",
+          "aliases": [
+            "Databricks ML Associate"
+          ],
+          "issuer": "Databricks",
+          "level": "Intermediate",
+          "region": "Global"
+        },
+        {
+          "id": "ds_011",
+          "name": "Tableau Desktop Specialist",
+          "aliases": [
+            "Tableau Specialist"
+          ],
+          "issuer": "Tableau",
+          "level": "Foundational",
+          "region": "Global"
+        },
+        {
+          "id": "ds_012",
+          "name": "Power BI Data Analyst Associate",
+          "aliases": [
+            "PL-300"
+          ],
+          "issuer": "Microsoft",
+          "level": "Intermediate",
+          "region": "Global"
+        },
+        {
+          "id": "ds_013",
+          "name": "SAS Certified Data Scientist",
+          "aliases": [
+            "SAS DS"
+          ],
+          "issuer": "SAS",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "ds_014",
+          "name": "SAS Certified Big Data Professional",
+          "aliases": [
+            "SAS Big Data"
+          ],
+          "issuer": "SAS",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "ds_015",
+          "name": "NVIDIA Deep Learning Institute Certificates",
+          "aliases": [
+            "NVIDIA DLI"
+          ],
+          "issuer": "NVIDIA",
+          "level": "Intermediate",
+          "region": "Global"
+        },
+        {
+          "id": "ds_016",
+          "name": "MITx MicroMasters Program in Statistics and Data Science",
+          "aliases": [
+            "MITx DS MicroMasters"
+          ],
+          "issuer": "MIT",
+          "level": "Expert",
+          "region": "Global"
+        },
+        {
+          "id": "ds_017",
+          "name": "HarvardX Data Science Professional Certificate",
+          "aliases": [
+            "Harvard DS Cert"
+          ],
+          "issuer": "Harvard",
+          "level": "Intermediate",
+          "region": "Global"
+        }
+      ]
+    },
+    {
+      "name": "Education & Teaching",
+      "certifications": [
+        {
+          "id": "edu_001",
+          "name": "Teaching English as a Foreign Language",
+          "aliases": [
+            "TEFL"
+          ],
+          "issuer": "Various Accredited Bodies",
+          "level": "Foundational",
+          "region": "Global"
+        },
+        {
+          "id": "edu_002",
+          "name": "Teaching English to Speakers of Other Languages",
+          "aliases": [
+            "TESOL"
+          ],
+          "issuer": "TESOL International / Universities",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "edu_003",
+          "name": "Cambridge CELTA",
+          "aliases": [
+            "CELTA"
+          ],
+          "issuer": "Cambridge English",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "edu_004",
+          "name": "Cambridge DELTA",
+          "aliases": [
+            "DELTA"
+          ],
+          "issuer": "Cambridge English",
+          "level": "Expert",
+          "region": "Global"
+        },
+        {
+          "id": "edu_005",
+          "name": "Google Certified Educator Level 1",
+          "aliases": [
+            "Google Educator L1"
+          ],
+          "issuer": "Google",
+          "level": "Foundational",
+          "region": "Global"
+        },
+        {
+          "id": "edu_006",
+          "name": "Google Certified Educator Level 2",
+          "aliases": [
+            "Google Educator L2"
+          ],
+          "issuer": "Google",
+          "level": "Intermediate",
+          "region": "Global"
+        },
+        {
+          "id": "edu_007",
+          "name": "Microsoft Certified Educator",
+          "aliases": [
+            "MCE"
+          ],
+          "issuer": "Microsoft",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "edu_008",
+          "name": "IB Teacher Certification",
+          "aliases": [
+            "IB Educator Cert"
+          ],
+          "issuer": "International Baccalaureate",
+          "level": "Professional",
+          "region": "Global"
+        }
+      ]
+    },
+    {
+      "name": "Energy, Oil & Gas",
+      "certifications": [
+        {
+          "id": "energy_001",
+          "name": "Certified Energy Manager",
+          "aliases": [
+            "CEM (Energy)"
+          ],
+          "issuer": "AEE",
+          "level": "Professional",
+          "region": "Global",
+          "also_relevant_for": [
+            "Engineering"
+          ],
+          "canonical_id": "cem_energy",
+          "domain_context": "Energy"
+        },
+        {
+          "id": "energy_002",
+          "name": "Certified Energy Professional",
+          "aliases": [
+            "CEP"
+          ],
+          "issuer": "AEE",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "energy_003",
+          "name": "Certified Renewable Energy Professional",
+          "aliases": [
+            "REP"
+          ],
+          "issuer": "AEE",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "energy_004",
+          "name": "NEBOSH Oil and Gas Certificate",
+          "aliases": [
+            "NEBOSH O&G"
+          ],
+          "issuer": "NEBOSH",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "energy_005",
+          "name": "OPITO Approved Offshore Safety Training",
+          "aliases": [
+            "OPITO"
+          ],
+          "issuer": "OPITO",
+          "level": "Foundational",
+          "region": "Global"
+        },
+        {
+          "id": "energy_006",
+          "name": "API Individual Certification Program",
+          "aliases": [
+            "API ICP"
+          ],
+          "issuer": "API",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "energy_007",
+          "name": "NABCEP Solar PV Installation Professional",
+          "aliases": [
+            "NABCEP Solar"
+          ],
+          "issuer": "NABCEP",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "energy_008",
+          "name": "Certified Measurement and Verification Professional",
+          "aliases": [
+            "CMVP"
+          ],
+          "issuer": "AEE",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "energy_009",
+          "name": "Petroleum Engineer Certification",
+          "aliases": [
+            "PE Petroleum"
+          ],
+          "issuer": "SPE",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "energy_010",
+          "name": "Certified Process Safety Professional",
+          "aliases": [
+            "CPSP"
+          ],
+          "issuer": "CCPS",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "energy_011",
+          "name": "Certified Wind Energy Professional",
+          "aliases": [
+            "CWEP"
+          ],
+          "issuer": "Various",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "energy_012",
+          "name": "HSE Management System Auditor",
+          "aliases": [
+            "HSE Auditor"
+          ],
+          "issuer": "Various",
+          "level": "Professional",
+          "region": "Global"
+        }
+      ]
+    },
+    {
+      "name": "Engineering",
+      "certifications": [
+        {
+          "id": "eng_001",
+          "name": "Engineer in Training",
+          "aliases": [
+            "EIT",
+            "Engineering Intern"
+          ],
+          "issuer": "NCEES",
+          "level": "Foundational",
+          "region": "Global"
+        },
+        {
+          "id": "eng_002",
+          "name": "Professional Engineer",
+          "aliases": [
+            "PE License"
+          ],
+          "issuer": "NCEES / State Boards",
+          "level": "Expert",
+          "region": "Global"
+        },
+        {
+          "id": "eng_003",
+          "name": "Chartered Engineer",
+          "aliases": [
+            "CEng"
+          ],
+          "issuer": "Engineering Council UK",
+          "level": "Expert",
+          "region": "Global"
+        },
+        {
+          "id": "eng_004",
+          "name": "Incorporated Engineer",
+          "aliases": [
+            "IEng"
+          ],
+          "issuer": "Engineering Council UK",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "eng_005",
+          "name": "Certified Maintenance & Reliability Professional",
+          "aliases": [
+            "CMRP"
+          ],
+          "issuer": "SMRP",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "eng_006",
+          "name": "Six Sigma Green Belt",
+          "aliases": [
+            "SSGB"
+          ],
+          "issuer": "ASQ / IASSC",
+          "level": "Intermediate",
+          "region": "Global"
+        },
+        {
+          "id": "eng_007",
+          "name": "Six Sigma Black Belt",
+          "aliases": [
+            "SSBB"
+          ],
+          "issuer": "ASQ / IASSC",
+          "level": "Expert",
+          "region": "Global"
+        },
+        {
+          "id": "eng_008",
+          "name": "Certified Reliability Engineer",
+          "aliases": [
+            "CRE"
+          ],
+          "issuer": "ASQ",
+          "level": "Professional",
+          "region": "Global",
+          "also_relevant_for": [
+            "Manufacturing & Quality Management"
+          ],
+          "canonical_id": "cre_asq"
+        },
+        {
+          "id": "eng_009",
+          "name": "Certified Quality Engineer",
+          "aliases": [
+            "CQE"
+          ],
+          "issuer": "ASQ",
+          "level": "Professional",
+          "region": "Global",
+          "also_relevant_for": [
+            "Manufacturing & Quality Management"
+          ],
+          "canonical_id": "cqe_asq"
+        },
+        {
+          "id": "eng_011",
+          "name": "LEED Green Associate",
+          "aliases": [
+            "LEED GA"
+          ],
+          "issuer": "US Green Building Council",
+          "level": "Foundational",
+          "region": "Global",
+          "canonical_id": "leed_ga"
+        },
+        {
+          "id": "eng_013",
+          "name": "Certified Fire Protection Specialist",
+          "aliases": [
+            "CFPS"
+          ],
+          "issuer": "NFPA",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "eng_014",
+          "name": "NEBOSH International General Certificate",
+          "aliases": [
+            "NEBOSH IGC",
+            "CAP (Automation)"
+          ],
+          "issuer": "NEBOSH",
+          "level": "Intermediate",
+          "region": "Global",
+          "domain_context": "Automation"
+        },
+        {
+          "id": "eng_015",
+          "name": "OSHA Safety Certification",
+          "aliases": [
+            "OSHA 10",
+            "OSHA 30"
+          ],
+          "issuer": "U.S. Occupational Safety & Health Administration",
+          "level": "Foundational",
+          "region": "Global"
+        },
+        {
+          "id": "eng_016",
+          "name": "Autodesk Certified Professional – AutoCAD",
+          "aliases": [
+            "AutoCAD ACP"
+          ],
+          "issuer": "Autodesk",
+          "level": "Intermediate",
+          "region": "Global"
+        },
+        {
+          "id": "eng_017",
+          "name": "Autodesk Certified Professional – Revit",
+          "aliases": [
+            "Revit ACP"
+          ],
+          "issuer": "Autodesk",
+          "level": "Intermediate",
+          "region": "Global"
+        },
+        {
+          "id": "eng_018",
+          "name": "SolidWorks Professional",
+          "aliases": [
+            "CSWP"
+          ],
+          "issuer": "Dassault Systèmes",
+          "level": "Intermediate",
+          "region": "Global"
+        },
+        {
+          "id": "eng_019",
+          "name": "SolidWorks Expert",
+          "aliases": [
+            "CSWE"
+          ],
+          "issuer": "Dassault Systèmes",
+          "level": "Expert",
+          "region": "Global"
+        },
+        {
+          "id": "eng_020",
+          "name": "FE Civil Exam Pass",
+          "aliases": [
+            "Fundamentals of Engineering Civil"
+          ],
+          "issuer": "NCEES",
+          "level": "Foundational",
+          "region": "Global"
+        },
+        {
+          "id": "eng_021",
+          "name": "Certified HVAC Designer",
+          "aliases": [
+            "CHD"
+          ],
+          "issuer": "ASHRAE",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "eng_022",
+          "name": "Certified Building Commissioning Professional",
+          "aliases": [
+            "CBCP"
+          ],
+          "issuer": "AEE",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "eng_023",
+          "name": "Chemical Engineering Licensure (FE/PE)",
+          "aliases": [
+            "FE Chemical",
+            "PE Chemical"
+          ],
+          "issuer": "NCEES",
+          "level": "Expert",
+          "region": "Global"
+        }
+      ]
+    },
+    {
+      "name": "Finance, Banking & Islamic Finance",
+      "certifications": [
+        {
+          "id": "fin_001",
+          "name": "Chartered Financial Analyst",
+          "aliases": [
+            "CFA",
+            "CFA Level 1",
+            "CFA Level 2",
+            "CFA Level 3"
+          ],
+          "issuer": "CFA Institute",
+          "level": "Expert",
+          "region": "Global"
+        },
+        {
+          "id": "fin_002",
+          "name": "Financial Risk Manager",
+          "aliases": [
+            "FRM",
+            "FRM Part 1",
+            "FRM Part 2"
+          ],
+          "issuer": "GARP",
+          "level": "Expert",
+          "region": "Global"
+        },
+        {
+          "id": "fin_003",
+          "name": "Certified Financial Planner",
+          "aliases": [
+            "CFP"
+          ],
+          "issuer": "CFP Board",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "fin_004",
+          "name": "Chartered Alternative Investment Analyst",
+          "aliases": [
+            "CAIA"
+          ],
+          "issuer": "CAIA Association",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "fin_005",
+          "name": "Certified Treasury Professional",
+          "aliases": [
+            "CTP"
+          ],
+          "issuer": "AFP",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "fin_006",
+          "name": "Financial Modeling & Valuation Analyst",
+          "aliases": [
+            "FMVA",
+            "CMA (Management Accountant)"
+          ],
+          "issuer": "Corporate Finance Institute",
+          "level": "Professional",
+          "region": "Global",
+          "domain_context": "Management Accountant"
+        },
+        {
+          "id": "fin_007",
+          "name": "Capital Markets & Securities Analyst",
+          "aliases": [
+            "CMSA"
+          ],
+          "issuer": "CFI",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "fin_008",
+          "name": "Investment Foundations Certificate",
+          "aliases": [
+            "CFA Investment Foundations"
+          ],
+          "issuer": "CFA Institute",
+          "level": "Foundational",
+          "region": "Global"
+        },
+        {
+          "id": "fin_009",
+          "name": "Certified Management Accountant",
+          "aliases": [
+            "CMA",
+            "CMA USA"
+          ],
+          "issuer": "IMA",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "fin_010",
+          "name": "Association of Chartered Certified Accountants",
+          "aliases": [
+            "ACCA"
+          ],
+          "issuer": "ACCA Global",
+          "level": "Expert",
+          "region": "Global"
+        },
+        {
+          "id": "fin_011",
+          "name": "Certified Public Accountant",
+          "aliases": [
+            "CPA",
+            "CPA US"
+          ],
+          "issuer": "AICPA",
+          "level": "Expert",
+          "region": "Global"
+        },
+        {
+          "id": "fin_012",
+          "name": "Chartered Accountant",
+          "aliases": [
+            "ACA",
+            "CA",
+            "ICAEW"
+          ],
+          "issuer": "Institute of Chartered Accountants",
+          "level": "Expert",
+          "region": "Global"
+        },
+        {
+          "id": "fin_013",
+          "name": "Certified Internal Auditor",
+          "aliases": [
+            "CIA"
+          ],
+          "issuer": "IIA",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "fin_014",
+          "name": "Certified Fraud Examiner",
+          "aliases": [
+            "CFE"
+          ],
+          "issuer": "ACFE",
+          "level": "Professional",
+          "region": "Global",
+          "also_relevant_for": [
+            "Legal & Compliance"
+          ],
+          "canonical_id": "cfe"
+        },
+        {
+          "id": "fin_015",
+          "name": "Islamic Finance Qualification",
+          "aliases": [
+            "IFQ"
+          ],
+          "issuer": "CISI",
+          "level": "Intermediate",
+          "region": "Global"
+        },
+        {
+          "id": "fin_016",
+          "name": "Certified Islamic Finance Professional",
+          "aliases": [
+            "CIFP"
+          ],
+          "issuer": "INCEIF",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "fin_017",
+          "name": "Certified Islamic Banking Professional",
+          "aliases": [
+            "CIBP"
+          ],
+          "issuer": "Ethica Institute",
+          "level": "Intermediate",
+          "region": "Global"
+        },
+        {
+          "id": "fin_018",
+          "name": "AAOIFI Certified Shari’ah Advisor & Auditor",
+          "aliases": [
+            "AAOIFI CSAA",
+            "CSAA"
+          ],
+          "issuer": "AAOIFI",
+          "level": "Expert",
+          "region": "GCC"
+        },
+        {
+          "id": "fin_019",
+          "name": "AAOIFI Certified Islamic Professional Accountant",
+          "aliases": [
+            "AAOIFI CIPA",
+            "CIPA"
+          ],
+          "issuer": "AAOIFI",
+          "level": "Expert",
+          "region": "GCC"
+        },
+        {
+          "id": "fin_020",
+          "name": "CIBAFI Certified Islamic Banker",
+          "aliases": [
+            "CIB",
+            "Islamic Banker Cert"
+          ],
+          "issuer": "CIBAFI",
+          "level": "Intermediate",
+          "region": "GCC"
+        },
+        {
+          "id": "fin_021",
+          "name": "CIBAFI Islamic Finance Qualification",
+          "aliases": [
+            "IFQ CIBAFI"
+          ],
+          "issuer": "CIBAFI",
+          "level": "Foundational",
+          "region": "GCC"
+        },
+        {
+          "id": "fin_022",
+          "name": "ICA Certificate in AML",
+          "aliases": [
+            "AML Cert",
+            "ICA AML"
+          ],
+          "issuer": "International Compliance Association",
+          "level": "Intermediate",
+          "region": "Global"
+        },
+        {
+          "id": "fin_023",
+          "name": "ICA Diploma in Governance, Risk & Compliance",
+          "aliases": [
+            "GRC Diploma",
+            "ICA GRC"
+          ],
+          "issuer": "ICA",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "fin_024",
+          "name": "Certified Anti-Money Laundering Specialist",
+          "aliases": [
+            "CAMS"
+          ],
+          "issuer": "ACAMS",
+          "level": "Professional",
+          "region": "Global",
+          "also_relevant_for": [
+            "Legal & Compliance"
+          ],
+          "canonical_id": "cams"
+        },
+        {
+          "id": "fin_025",
+          "name": "Digital Banking Specialist",
+          "aliases": [
+            "DBS Certificate"
+          ],
+          "issuer": "The Digital Banking Institute",
+          "level": "Intermediate",
+          "region": "Global"
+        },
+        {
+          "id": "fin_026",
+          "name": "FinTech Certificate",
+          "aliases": [
+            "FinTech Professional Cert"
+          ],
+          "issuer": "CFTE / MIT / Various",
+          "level": "Intermediate",
+          "region": "Global"
+        },
+        {
+          "id": "fin_027",
+          "name": "Blockchain for Finance Professional",
+          "aliases": [
+            "Blockchain Finance Cert"
+          ],
+          "issuer": "CFTE / Blockchain Council",
+          "level": "Intermediate",
+          "region": "Global"
+        }
+      ]
+    },
+    {
+      "name": "Healthcare & Medical",
+      "certifications": [
+        {
+          "id": "health_001",
+          "name": "USMLE Step 1",
+          "aliases": [
+            "Step 1",
+            "USMLE 1",
+            "CMA (Medical Assistant)"
+          ],
+          "issuer": "NBME / FSMB",
+          "level": "Professional",
+          "region": "Global",
+          "domain_context": "Medical Assistant"
+        },
+        {
+          "id": "health_002",
+          "name": "USMLE Step 2 CK",
+          "aliases": [
+            "Step 2 CK",
+            "USMLE 2"
+          ],
+          "issuer": "NBME / FSMB",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "health_003",
+          "name": "USMLE Step 3",
+          "aliases": [
+            "Step 3",
+            "USMLE 3"
+          ],
+          "issuer": "NBME / FSMB",
+          "level": "Expert",
+          "region": "Global"
+        },
+        {
+          "id": "health_004",
+          "name": "PLAB",
+          "aliases": [
+            "PLAB 1",
+            "PLAB 2",
+            "UK Medical Licensing"
+          ],
+          "issuer": "GMC UK",
+          "level": "Professional",
+          "region": "UK"
+        },
+        {
+          "id": "health_005",
+          "name": "MRCP",
+          "aliases": [
+            "MRCP Part 1",
+            "MRCP Part 2"
+          ],
+          "issuer": "Royal College of Physicians",
+          "level": "Expert",
+          "region": "Global"
+        },
+        {
+          "id": "health_006",
+          "name": "MRCS",
+          "aliases": [
+            "MRCS Part A",
+            "MRCS Part B"
+          ],
+          "issuer": "Royal College of Surgeons",
+          "level": "Expert",
+          "region": "Global"
+        },
+        {
+          "id": "health_007",
+          "name": "MRCGP",
+          "aliases": [
+            "GP Certification",
+            "MRCGP International"
+          ],
+          "issuer": "Royal College of General Practitioners",
+          "level": "Expert",
+          "region": "Global"
+        },
+        {
+          "id": "health_008",
+          "name": "NCLEX-RN",
+          "aliases": [
+            "NCLEX"
+          ],
+          "issuer": "NCSBN",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "health_009",
+          "name": "CGFNS Certification",
+          "aliases": [
+            "CGFNS Qualifying Exam"
+          ],
+          "issuer": "CGFNS International",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "health_010",
+          "name": "HAAD Licensing Exam",
+          "aliases": [
+            "DOH Abu Dhabi License",
+            "HAAD Exam"
+          ],
+          "issuer": "Department of Health Abu Dhabi",
+          "level": "Professional",
+          "region": "GCC"
+        },
+        {
+          "id": "health_011",
+          "name": "DHA Licensing Exam",
+          "aliases": [
+            "DHA License",
+            "Dubai DHA Exam"
+          ],
+          "issuer": "Dubai Health Authority",
+          "level": "Professional",
+          "region": "GCC"
+        },
+        {
+          "id": "health_012",
+          "name": "MOH UAE Exam",
+          "aliases": [
+            "MOHAP Exam",
+            "UAE MOH License"
+          ],
+          "issuer": "UAE Ministry of Health",
+          "level": "Professional",
+          "region": "GCC"
+        },
+        {
+          "id": "health_013",
+          "name": "NHRA Bahrain License",
+          "aliases": [
+            "Bahrain NHRA License",
+            "NHRA Exam"
+          ],
+          "issuer": "National Health Regulatory Authority Bahrain",
+          "level": "Professional",
+          "region": "Bahrain"
+        },
+        {
+          "id": "health_014",
+          "name": "SCFHS Licensing Exam",
+          "aliases": [
+            "SCFHS Exam",
+            "Saudi Prometric"
+          ],
+          "issuer": "Saudi Commission for Health Specialties",
+          "level": "Professional",
+          "region": "KSA"
+        },
+        {
+          "id": "health_015",
+          "name": "OMSB Licensing",
+          "aliases": [
+            "Oman Medical Licensing"
+          ],
+          "issuer": "Oman Medical Specialty Board",
+          "level": "Professional",
+          "region": "Oman"
+        },
+        {
+          "id": "health_016",
+          "name": "BLS",
+          "aliases": [
+            "Basic Life Support"
+          ],
+          "issuer": "AHA / Red Cross",
+          "level": "Foundational",
+          "region": "Global"
+        },
+        {
+          "id": "health_017",
+          "name": "ACLS",
+          "aliases": [
+            "Advanced Cardiovascular Life Support"
+          ],
+          "issuer": "AHA",
+          "level": "Intermediate",
+          "region": "Global"
+        },
+        {
+          "id": "health_018",
+          "name": "PALS",
+          "aliases": [
+            "Pediatric Advanced Life Support"
+          ],
+          "issuer": "AHA",
+          "level": "Intermediate",
+          "region": "Global"
+        },
+        {
+          "id": "health_019",
+          "name": "Registered Pharmacist License",
+          "aliases": [
+            "Pharmacist Licensure"
+          ],
+          "issuer": "Various Licensing Boards",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "health_020",
+          "name": "FPGEE",
+          "aliases": [
+            "Foreign Pharmacy Graduate Exam"
+          ],
+          "issuer": "NABP",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "health_021",
+          "name": "NAPLEX",
+          "aliases": [
+            "North American Pharmacist Licensure Exam"
+          ],
+          "issuer": "NABP",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "health_022",
+          "name": "Dental Licensure Exam",
+          "aliases": [
+            "INBDE",
+            "NBDE"
+          ],
+          "issuer": "JCNDE",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "health_023",
+          "name": "Registered Radiologic Technologist",
+          "aliases": [
+            "ARRT Radiography"
+          ],
+          "issuer": "ARRT",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "health_024",
+          "name": "Certified Public Health",
+          "aliases": [
+            "CPH"
+          ],
+          "issuer": "National Board of Public Health Examiners",
+          "level": "Professional",
+          "region": "Global"
+        }
+      ]
+    },
+    {
+      "name": "Hospitality & Tourism",
+      "certifications": [
+        {
+          "id": "hos_001",
+          "name": "Certified Hospitality Professional",
+          "aliases": [
+            "CHP"
+          ],
+          "issuer": "American Hotel & Lodging Educational Institute",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "hos_002",
+          "name": "Certified Hotel Administrator",
+          "aliases": [
+            "CHA"
+          ],
+          "issuer": "AHLEI",
+          "level": "Expert",
+          "region": "Global"
+        },
+        {
+          "id": "hos_003",
+          "name": "Certified Front Desk Representative",
+          "aliases": [
+            "CFDR"
+          ],
+          "issuer": "AHLEI",
+          "level": "Foundational",
+          "region": "Global"
+        },
+        {
+          "id": "hos_004",
+          "name": "Certified Guest Service Professional",
+          "aliases": [
+            "CGSP"
+          ],
+          "issuer": "AHLEI",
+          "level": "Foundational",
+          "region": "Global"
+        },
+        {
+          "id": "hos_005",
+          "name": "IATA Travel & Tourism Consultant",
+          "aliases": [
+            "IATA TTC"
+          ],
+          "issuer": "IATA",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "hos_006",
+          "name": "IATA Foundation in Travel & Tourism",
+          "aliases": [
+            "IATA Foundation Diploma"
+          ],
+          "issuer": "IATA",
+          "level": "Foundational",
+          "region": "Global"
+        },
+        {
+          "id": "hos_007",
+          "name": "Certified Event Planner",
+          "aliases": [
+            "Event Planner Cert"
+          ],
+          "issuer": "Various Organizations",
+          "level": "Intermediate",
+          "region": "Global"
+        },
+        {
+          "id": "hos_008",
+          "name": "Restaurant Management Certification",
+          "aliases": [
+            "Restaurant Manager Cert"
+          ],
+          "issuer": "AHLEI / Various",
+          "level": "Intermediate",
+          "region": "Global"
+        }
+      ]
+    },
+    {
+      "name": "Human Resources & Talent Development",
+      "certifications": [
+        {
+          "id": "hr_001",
+          "name": "Professional in Human Resources",
+          "aliases": [
+            "PHR"
+          ],
+          "issuer": "HRCI",
+          "level": "Intermediate",
+          "region": "Global"
+        },
+        {
+          "id": "hr_002",
+          "name": "Senior Professional in Human Resources",
+          "aliases": [
+            "SPHR"
+          ],
+          "issuer": "HRCI",
+          "level": "Expert",
+          "region": "Global"
+        },
+        {
+          "id": "hr_003",
+          "name": "SHRM Certified Professional",
+          "aliases": [
+            "SHRM-CP"
+          ],
+          "issuer": "SHRM",
+          "level": "Intermediate",
+          "region": "Global"
+        },
+        {
+          "id": "hr_004",
+          "name": "SHRM Senior Certified Professional",
+          "aliases": [
+            "SHRM-SCP"
+          ],
+          "issuer": "SHRM",
+          "level": "Expert",
+          "region": "Global"
+        },
+        {
+          "id": "hr_005",
+          "name": "ATD Associate Professional in Talent Development",
+          "aliases": [
+            "APTD"
+          ],
+          "issuer": "ATD",
+          "level": "Intermediate",
+          "region": "Global",
+          "also_relevant_for": [],
+          "canonical_id": "aptd"
+        },
+        {
+          "id": "hr_006",
+          "name": "ATD Certified Professional in Talent Development",
+          "aliases": [
+            "CPTD"
+          ],
+          "issuer": "ATD",
+          "level": "Expert",
+          "region": "Global",
+          "also_relevant_for": [],
+          "canonical_id": "cptd"
+        },
+        {
+          "id": "hr_007",
+          "name": "ILO HR Management Certification",
+          "aliases": [
+            "ILO HR Cert"
+          ],
+          "issuer": "International Labour Organization",
+          "level": "Foundational",
+          "region": "Global"
+        },
+        {
+          "id": "hr_008",
+          "name": "LinkedIn Learning HR Professional Certificate",
+          "aliases": [
+            "LinkedIn HR Cert"
+          ],
+          "issuer": "LinkedIn",
+          "level": "Foundational",
+          "region": "Global"
+        },
+        {
+          "id": "hr_011",
+          "name": "Certified Compensation Professional",
+          "aliases": [
+            "CCP"
+          ],
+          "issuer": "WorldatWork",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "hr_012",
+          "name": "Certified Benefits Professional",
+          "aliases": [
+            "CBP"
+          ],
+          "issuer": "WorldatWork",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "hr_013",
+          "name": "Certified Professional in Learning and Performance",
+          "aliases": [
+            "CPLP"
+          ],
+          "issuer": "ATD",
+          "level": "Expert",
+          "region": "Global"
+        }
+      ]
+    },
+    {
+      "name": "Legal & Compliance",
+      "certifications": [
+        {
+          "id": "legal_001",
+          "name": "Certified Compliance & Ethics Professional",
+          "aliases": [
+            "CCEP"
+          ],
+          "issuer": "SCCE",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "legal_004",
+          "name": "Certified GDPR Practitioner",
+          "aliases": [
+            "GDPR Practitioner"
+          ],
+          "issuer": "APMG",
+          "level": "Intermediate",
+          "region": "Global"
+        },
+        {
+          "id": "legal_005",
+          "name": "ISO 37301 Lead Implementer",
+          "aliases": [
+            "Compliance Management Lead Implementer"
+          ],
+          "issuer": "PECB / Various",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "legal_006",
+          "name": "ISO 37301 Lead Auditor",
+          "aliases": [
+            "Compliance Lead Auditor"
+          ],
+          "issuer": "PECB / Various",
+          "level": "Expert",
+          "region": "Global"
+        },
+        {
+          "id": "legal_008",
+          "name": "ICA International Diploma in Anti-Money Laundering",
+          "aliases": [
+            "ICA AML Diploma"
+          ],
+          "issuer": "ICA",
+          "level": "Expert",
+          "region": "Global"
+        },
+        {
+          "id": "legal_010",
+          "name": "Certified Sanctions Specialist",
+          "aliases": [
+            "CSS"
+          ],
+          "issuer": "Association of Certified Sanctions Specialists",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "legal_011",
+          "name": "Anti-Corruption Compliance Certification",
+          "aliases": [
+            "ACCP"
+          ],
+          "issuer": "Ethics & Compliance Initiative",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "legal_012",
+          "name": "Labor Law Compliance Certificate",
+          "aliases": [
+            "HR Law Cert"
+          ],
+          "issuer": "Various Issuers",
+          "level": "Intermediate",
+          "region": "Global"
+        }
+      ]
+    },
+    {
+      "name": "Logistics & Supply Chain",
+      "certifications": [
+        {
+          "id": "log_001",
+          "name": "Certified Supply Chain Professional",
+          "aliases": [
+            "CSCP"
+          ],
+          "issuer": "APICS / ASCM",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "log_002",
+          "name": "Certified in Logistics, Transportation and Distribution",
+          "aliases": [
+            "CLTD"
+          ],
+          "issuer": "APICS / ASCM",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "log_003",
+          "name": "Certified in Production and Inventory Management",
+          "aliases": [
+            "CPIM"
+          ],
+          "issuer": "APICS",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "log_004",
+          "name": "SCPro Certification",
+          "aliases": [
+            "SCPro",
+            "SCPro Level 1"
+          ],
+          "issuer": "CSCMP",
+          "level": "Intermediate",
+          "region": "Global"
+        },
+        {
+          "id": "log_005",
+          "name": "Lean Six Sigma Green Belt (Supply Chain)",
+          "aliases": [
+            "LSSGB Supply Chain"
+          ],
+          "issuer": "ASQ / IASSC",
+          "level": "Intermediate",
+          "region": "Global"
+        },
+        {
+          "id": "log_006",
+          "name": "Logistics Management Certification",
+          "aliases": [
+            "Logistics Cert"
+          ],
+          "issuer": "CILT / Various",
+          "level": "Foundational",
+          "region": "Global"
+        },
+        {
+          "id": "log_007",
+          "name": "Transportation & Distribution Certification",
+          "aliases": [
+            "T&D Specialist"
+          ],
+          "issuer": "Various Institutions",
+          "level": "Intermediate",
+          "region": "Global"
+        },
+        {
+          "id": "log_008",
+          "name": "SAP Supply Chain Management Certification",
+          "aliases": [
+            "SAP SCM"
+          ],
+          "issuer": "SAP",
+          "level": "Professional",
+          "region": "Global"
+        }
+      ]
+    },
+    {
+      "name": "Manufacturing & Quality Management",
+      "certifications": [
+        {
+          "id": "mfg_001",
+          "name": "Certified Quality Manager",
+          "aliases": [
+            "CQM"
+          ],
+          "issuer": "ASQ",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "mfg_002",
+          "name": "Certified Quality Auditor",
+          "aliases": [
+            "CQA"
+          ],
+          "issuer": "ASQ",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "mfg_004",
+          "name": "Certified Quality Improvement Associate",
+          "aliases": [
+            "CQIA"
+          ],
+          "issuer": "ASQ",
+          "level": "Intermediate",
+          "region": "Global"
+        },
+        {
+          "id": "mfg_006",
+          "name": "Lean Manufacturing Certification",
+          "aliases": [
+            "Lean Certified"
+          ],
+          "issuer": "SME",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "mfg_007",
+          "name": "Certified Production Technician",
+          "aliases": [
+            "CPT"
+          ],
+          "issuer": "MSSC",
+          "level": "Foundational",
+          "region": "Global"
+        },
+        {
+          "id": "mfg_008",
+          "name": "ISO 9001 Internal Auditor",
+          "aliases": [
+            "ISO 9001 IA"
+          ],
+          "issuer": "Various",
+          "level": "Intermediate",
+          "region": "Global"
+        },
+        {
+          "id": "mfg_009",
+          "name": "AS9100 Lead Auditor",
+          "aliases": [
+            "AS9100 LA"
+          ],
+          "issuer": "Various",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "mfg_010",
+          "name": "Certified Manufacturing Engineer",
+          "aliases": [
+            "CMfgE"
+          ],
+          "issuer": "SME",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "mfg_011",
+          "name": "Total Quality Management Certification",
+          "aliases": [
+            "TQM"
+          ],
+          "issuer": "Various",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "mfg_012",
+          "name": "Kaizen Certification",
+          "aliases": [
+            "Kaizen Practitioner"
+          ],
+          "issuer": "Various",
+          "level": "Intermediate",
+          "region": "Global"
+        }
+      ]
+    },
+    {
+      "name": "Marketing & Digital Media",
+      "certifications": [
+        {
+          "id": "mkt_001",
+          "name": "Google Analytics Certification",
+          "aliases": [
+            "GA4 Certification"
+          ],
+          "issuer": "Google",
+          "level": "Intermediate",
+          "region": "Global"
+        },
+        {
+          "id": "mkt_002",
+          "name": "Google Ads Certification",
+          "aliases": [
+            "Google Ads Cert",
+            "Google Ads Search Cert"
+          ],
+          "issuer": "Google",
+          "level": "Intermediate",
+          "region": "Global",
+          "also_relevant_for": [
+            "Sales & Business Development"
+          ],
+          "canonical_id": "google_ads"
+        },
+        {
+          "id": "mkt_003",
+          "name": "Meta Digital Marketing Associate",
+          "aliases": [
+            "Facebook Blueprint Certification",
+            "Meta DMA"
+          ],
+          "issuer": "Meta",
+          "level": "Foundational",
+          "region": "Global",
+          "also_relevant_for": [
+            "Sales & Business Development"
+          ],
+          "canonical_id": "meta_dma"
+        },
+        {
+          "id": "mkt_004",
+          "name": "HubSpot Content Marketing Certification",
+          "aliases": [
+            "HubSpot Content Cert"
+          ],
+          "issuer": "HubSpot Academy",
+          "level": "Foundational",
+          "region": "Global"
+        },
+        {
+          "id": "mkt_005",
+          "name": "HubSpot Social Media Certification",
+          "aliases": [
+            "HubSpot Social Cert"
+          ],
+          "issuer": "HubSpot Academy",
+          "level": "Foundational",
+          "region": "Global"
+        },
+        {
+          "id": "mkt_006",
+          "name": "American Marketing Association PCM",
+          "aliases": [
+            "AMA PCM"
+          ],
+          "issuer": "AMA",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "mkt_007",
+          "name": "Chartered Institute of Marketing Diploma",
+          "aliases": [
+            "CIM Diploma"
+          ],
+          "issuer": "CIM UK",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "mkt_008",
+          "name": "YouTube Content Growth Certification",
+          "aliases": [
+            "YouTube Content Cert"
+          ],
+          "issuer": "Google",
+          "level": "Foundational",
+          "region": "Global"
+        },
+        {
+          "id": "mkt_009",
+          "name": "SEO Specialist Certification",
+          "aliases": [
+            "SEO Cert"
+          ],
+          "issuer": "Various / Semrush / Moz",
+          "level": "Intermediate",
+          "region": "Global"
+        }
+      ]
+    },
+    {
+      "name": "Microsoft Office & Productivity",
+      "certifications": [
+        {
+          "id": "office_001",
+          "name": "Microsoft Office Specialist Excel",
+          "aliases": [
+            "77-727",
+            "Excel MOS",
+            "MOS Excel"
+          ],
+          "issuer": "Microsoft",
+          "level": "Intermediate",
+          "region": "Global"
+        },
+        {
+          "id": "office_002",
+          "name": "Microsoft Office Specialist Word",
+          "aliases": [
+            "77-725",
+            "MOS Word",
+            "Word MOS"
+          ],
+          "issuer": "Microsoft",
+          "level": "Intermediate",
+          "region": "Global"
+        },
+        {
+          "id": "office_003",
+          "name": "Microsoft Office Specialist PowerPoint",
+          "aliases": [
+            "77-729",
+            "MOS PowerPoint",
+            "PowerPoint MOS"
+          ],
+          "issuer": "Microsoft",
+          "level": "Intermediate",
+          "region": "Global"
+        },
+        {
+          "id": "office_004",
+          "name": "Microsoft Office Specialist Outlook",
+          "aliases": [
+            "MOS Outlook",
+            "Outlook MOS"
+          ],
+          "issuer": "Microsoft",
+          "level": "Intermediate",
+          "region": "Global"
+        },
+        {
+          "id": "office_005",
+          "name": "Microsoft Office Specialist Expert",
+          "aliases": [
+            "Excel Expert",
+            "MOS Expert",
+            "Word Expert"
+          ],
+          "issuer": "Microsoft",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "office_006",
+          "name": "Microsoft Office Specialist Master",
+          "aliases": [
+            "MOS Master"
+          ],
+          "issuer": "Microsoft",
+          "level": "Expert",
+          "region": "Global"
+        },
+        {
+          "id": "office_007",
+          "name": "Microsoft 365 Certified Fundamentals",
+          "aliases": [
+            "MS-900"
+          ],
+          "issuer": "Microsoft",
+          "level": "Foundational",
+          "region": "Global"
+        },
+        {
+          "id": "office_008",
+          "name": "Microsoft Certified Modern Desktop Administrator",
+          "aliases": [
+            "MD-101"
+          ],
+          "issuer": "Microsoft",
+          "level": "Professional",
+          "region": "Global"
+        }
+      ]
+    },
+    {
+      "name": "Project Management & Agile",
+      "certifications": [
+        {
+          "id": "pm_001",
+          "name": "Project Management Professional",
+          "aliases": [
+            "PMP"
+          ],
+          "issuer": "PMI",
+          "level": "Expert",
+          "region": "Global"
+        },
+        {
+          "id": "pm_002",
+          "name": "Certified Associate in Project Management",
+          "aliases": [
+            "CAPM",
+            "CAPM"
+          ],
+          "issuer": "PMI",
+          "level": "Foundational",
+          "region": "Global",
+          "domain_context": "Project Management & Agile"
+        },
+        {
+          "id": "pm_003",
+          "name": "PRINCE2 Foundation",
+          "aliases": [
+            "PRINCE2 FND"
+          ],
+          "issuer": "AXELOS",
+          "level": "Foundational",
+          "region": "Global"
+        },
+        {
+          "id": "pm_004",
+          "name": "PRINCE2 Practitioner",
+          "aliases": [
+            "PRINCE2 PRAC"
+          ],
+          "issuer": "AXELOS",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "pm_005",
+          "name": "AgilePM Foundation",
+          "aliases": [
+            "AgilePM FND"
+          ],
+          "issuer": "APMG International",
+          "level": "Foundational",
+          "region": "Global"
+        },
+        {
+          "id": "pm_006",
+          "name": "AgilePM Practitioner",
+          "aliases": [
+            "AgilePM PRAC"
+          ],
+          "issuer": "APMG International",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "pm_007",
+          "name": "Professional Scrum Master I",
+          "aliases": [
+            "PSM I"
+          ],
+          "issuer": "Scrum.org",
+          "level": "Foundational",
+          "region": "Global"
+        },
+        {
+          "id": "pm_008",
+          "name": "Professional Scrum Master II",
+          "aliases": [
+            "PSM II"
+          ],
+          "issuer": "Scrum.org",
+          "level": "Intermediate",
+          "region": "Global"
+        },
+        {
+          "id": "pm_009",
+          "name": "Professional Scrum Master III",
+          "aliases": [
+            "PSM III"
+          ],
+          "issuer": "Scrum.org",
+          "level": "Expert",
+          "region": "Global"
+        },
+        {
+          "id": "pm_010",
+          "name": "Professional Scrum Product Owner",
+          "aliases": [
+            "PSPO I"
+          ],
+          "issuer": "Scrum.org",
+          "level": "Foundational",
+          "region": "Global"
+        },
+        {
+          "id": "pm_011",
+          "name": "SAFe Agilist",
+          "aliases": [
+            "Leading SAFe",
+            "SAFe Agilist"
+          ],
+          "issuer": "Scaled Agile",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "pm_012",
+          "name": "SAFe Practitioner",
+          "aliases": [
+            "SAFe Practitioner",
+            "SAFe for Teams"
+          ],
+          "issuer": "Scaled Agile",
+          "level": "Intermediate",
+          "region": "Global"
+        },
+        {
+          "id": "pm_013",
+          "name": "Certified ScrumMaster",
+          "aliases": [
+            "CSM"
+          ],
+          "issuer": "Scrum Alliance",
+          "level": "Foundational",
+          "region": "Global"
+        },
+        {
+          "id": "pm_014",
+          "name": "Certified Scrum Product Owner",
+          "aliases": [
+            "CSPO"
+          ],
+          "issuer": "Scrum Alliance",
+          "level": "Foundational",
+          "region": "Global"
+        },
+        {
+          "id": "pm_015",
+          "name": "Lean Six Sigma Yellow Belt",
+          "aliases": [
+            "LSSYB"
+          ],
+          "issuer": "IASSC / ASQ",
+          "level": "Foundational",
+          "region": "Global"
+        },
+        {
+          "id": "pm_016",
+          "name": "Lean Six Sigma Green Belt",
+          "aliases": [
+            "LSSGB"
+          ],
+          "issuer": "IASSC / ASQ",
+          "level": "Intermediate",
+          "region": "Global"
+        },
+        {
+          "id": "pm_017",
+          "name": "Lean Six Sigma Black Belt",
+          "aliases": [
+            "LSSBB"
+          ],
+          "issuer": "IASSC / ASQ",
+          "level": "Expert",
+          "region": "Global"
+        },
+        {
+          "id": "pm_018",
+          "name": "ITIL 4 Foundation",
+          "aliases": [
+            "ITIL Foundation"
+          ],
+          "issuer": "AXELOS",
+          "level": "Foundational",
+          "region": "Global"
+        },
+        {
+          "id": "pm_019",
+          "name": "ITIL 4 Managing Professional",
+          "aliases": [
+            "ITIL MP"
+          ],
+          "issuer": "AXELOS",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "pm_020",
+          "name": "Change Management Practitioner",
+          "aliases": [
+            "CMP"
+          ],
+          "issuer": "APMG International",
+          "level": "Professional",
+          "region": "Global"
+        }
+      ]
+    },
+    {
+      "name": "Public Sector, Policy & Governance",
+      "certifications": [
+        {
+          "id": "pub_001",
+          "name": "Certified Government Financial Manager",
+          "aliases": [
+            "CGFM"
+          ],
+          "issuer": "AGA",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "pub_002",
+          "name": "Certified Public Manager",
+          "aliases": [
+            "CPM"
+          ],
+          "issuer": "NASPAA",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "pub_003",
+          "name": "Certified Government Auditing Professional",
+          "aliases": [
+            "CGAP"
+          ],
+          "issuer": "IIA",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "pub_004",
+          "name": "Certified Association Executive",
+          "aliases": [
+            "CAE"
+          ],
+          "issuer": "ASAE",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "pub_005",
+          "name": "Certified Fund Raising Executive",
+          "aliases": [
+            "CFRE"
+          ],
+          "issuer": "CFRE International",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "pub_006",
+          "name": "Master Public Administration",
+          "aliases": [
+            "MPA"
+          ],
+          "issuer": "NASPAA",
+          "level": "Expert",
+          "region": "Global"
+        },
+        {
+          "id": "pub_007",
+          "name": "Certified Nonprofit Professional",
+          "aliases": [
+            "CNP"
+          ],
+          "issuer": "Nonprofit Leadership Alliance",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "pub_008",
+          "name": "Grant Professional Certified",
+          "aliases": [
+            "GPC"
+          ],
+          "issuer": "GPA",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "pub_009",
+          "name": "Emergency Management Certification",
+          "aliases": [
+            "CEM (Emergency Mgmt)"
+          ],
+          "issuer": "IAEM",
+          "level": "Professional",
+          "region": "Global",
+          "domain_context": "Emergency Mgmt"
+        },
+        {
+          "id": "pub_010",
+          "name": "Certified Economic Developer",
+          "aliases": [
+            "CEcD"
+          ],
+          "issuer": "IEDC",
+          "level": "Professional",
+          "region": "Global"
+        }
+      ]
+    },
+    {
+      "name": "Sales & Business Development",
+      "certifications": [
+        {
+          "id": "sales_001",
+          "name": "Certified Sales Professional",
+          "aliases": [
+            "CSP"
+          ],
+          "issuer": "Sales Management Association / NASP",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "sales_002",
+          "name": "Certified Professional Sales Leader",
+          "aliases": [
+            "CPSL"
+          ],
+          "issuer": "NASP",
+          "level": "Expert",
+          "region": "Global"
+        },
+        {
+          "id": "sales_003",
+          "name": "HubSpot Sales Software Certification",
+          "aliases": [
+            "HubSpot Sales Cert"
+          ],
+          "issuer": "HubSpot Academy",
+          "level": "Foundational",
+          "region": "Global"
+        },
+        {
+          "id": "sales_004",
+          "name": "Salesforce Certified Administrator",
+          "aliases": [
+            "Salesforce Admin"
+          ],
+          "issuer": "Salesforce",
+          "level": "Intermediate",
+          "region": "Global"
+        },
+        {
+          "id": "sales_005",
+          "name": "Salesforce Certified Sales Representative",
+          "aliases": [
+            "Salesforce Sales Cert"
+          ],
+          "issuer": "Salesforce",
+          "level": "Foundational",
+          "region": "Global"
+        },
+        {
+          "id": "sales_006",
+          "name": "Strategic Sales Management Professional",
+          "aliases": [
+            "SSMP"
+          ],
+          "issuer": "Various Accredited Bodies",
+          "level": "Professional",
+          "region": "Global"
+        }
+      ]
+    },
+    {
+      "name": "Software Engineering & Programming",
+      "certifications": [
+        {
+          "id": "soft_001",
+          "name": "Oracle Certified Professional – Java Programmer",
+          "aliases": [
+            "OCPJP",
+            "Oracle Java Certification"
+          ],
+          "issuer": "Oracle",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "soft_002",
+          "name": "Oracle Certified Associate – Java Programmer",
+          "aliases": [
+            "OCAJP"
+          ],
+          "issuer": "Oracle",
+          "level": "Foundational",
+          "region": "Global"
+        },
+        {
+          "id": "soft_003",
+          "name": "Microsoft Certified: Azure Developer Associate",
+          "aliases": [
+            "AZ-204"
+          ],
+          "issuer": "Microsoft",
+          "level": "Intermediate",
+          "region": "Global"
+        },
+        {
+          "id": "soft_004",
+          "name": "AWS Certified Developer – Associate",
+          "aliases": [
+            "AWS CDA"
+          ],
+          "issuer": "Amazon Web Services",
+          "level": "Intermediate",
+          "region": "Global"
+        },
+        {
+          "id": "soft_005",
+          "name": "Google Professional Cloud Developer",
+          "aliases": [
+            "GCP Developer"
+          ],
+          "issuer": "Google",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "soft_007",
+          "name": "Scrum Developer Certified",
+          "aliases": [
+            "SDC"
+          ],
+          "issuer": "Scrum Study",
+          "level": "Foundational",
+          "region": "Global"
+        },
+        {
+          "id": "soft_008",
+          "name": "Microsoft Certified: DevOps Engineer Expert",
+          "aliases": [
+            "AZ-400"
+          ],
+          "issuer": "Microsoft",
+          "level": "Expert",
+          "region": "Global"
+        },
+        {
+          "id": "soft_009",
+          "name": "Professional Scrum Developer",
+          "aliases": [
+            "PSD"
+          ],
+          "issuer": "Scrum.org",
+          "level": "Intermediate",
+          "region": "Global"
+        },
+        {
+          "id": "soft_010",
+          "name": "Oracle Database SQL Certified Associate",
+          "aliases": [
+            "Oracle SQL Associate"
+          ],
+          "issuer": "Oracle",
+          "level": "Foundational",
+          "region": "Global"
+        },
+        {
+          "id": "soft_011",
+          "name": "MongoDB Developer Certification",
+          "aliases": [
+            "MongoDB Dev Cert"
+          ],
+          "issuer": "MongoDB University",
+          "level": "Intermediate",
+          "region": "Global"
+        },
+        {
+          "id": "soft_012",
+          "name": "Microsoft Power Platform Developer Associate",
+          "aliases": [
+            "PL-400"
+          ],
+          "issuer": "Microsoft",
+          "level": "Intermediate",
+          "region": "Global"
+        },
+        {
+          "id": "soft_013",
+          "name": "Google Mobile Web Specialist",
+          "aliases": [
+            "Google Web Specialist"
+          ],
+          "issuer": "Google",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "soft_014",
+          "name": "Unity Certified Programmer",
+          "aliases": [
+            "Unity Programmer Cert"
+          ],
+          "issuer": "Unity",
+          "level": "Intermediate",
+          "region": "Global"
+        },
+        {
+          "id": "soft_015",
+          "name": "Meta Front-End Developer Professional Certificate",
+          "aliases": [
+            "Meta Frontend Cert"
+          ],
+          "issuer": "Meta",
+          "level": "Foundational",
+          "region": "Global"
+        },
+        {
+          "id": "soft_016",
+          "name": "Meta Back-End Developer Professional Certificate",
+          "aliases": [
+            "Meta Backend Cert"
+          ],
+          "issuer": "Meta",
+          "level": "Intermediate",
+          "region": "Global"
+        },
+        {
+          "id": "soft_017",
+          "name": "IBM Full-Stack Cloud Developer",
+          "aliases": [
+            "IBM Cloud Developer"
+          ],
+          "issuer": "IBM",
+          "level": "Foundational",
+          "region": "Global"
+        }
+      ]
+    }
+  ]
+}

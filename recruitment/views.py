@@ -1,6 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required, permission_required
 from django.db import models
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.http import require_http_methods
@@ -18,7 +17,7 @@ import docx
 import os
 import io
 import json
-
+import hashlib
 
 
 def get_client_ip(request):
@@ -60,70 +59,43 @@ def extract_text_from_docx(uploaded_file):
         return ""
 
 
-@login_required
-@permission_required('recruitment.add_candidate', raise_exception=True)
 def upload_resume(request):
     """
-    Resume upload with job selection - UPDATED - HR ADMIN ONLY
+    Simplified CV upload with automatic contact extraction
+    No manual form fields - everything extracted from CV
     """
+    
     if request.method == 'POST':
+        uploaded_file = request.FILES.get('resume_file')
+        job_id = request.POST.get('job_posting_id')
+        
+        # Validate file exists
+        if not uploaded_file:
+            messages.error(request, 'Please select a resume file to upload')
+            job_postings = JobPosting.objects.filter(is_active=True).order_by('-created_at')
+            return render(request, 'recruitment/upload.html', {'job_postings': job_postings})
+        
+        # Security: Validate file upload
+        is_valid, error_message = security_validator.validate_file_upload(uploaded_file)
+        if not is_valid:
+            messages.error(request, error_message)
+            job_postings = JobPosting.objects.filter(is_active=True).order_by('-created_at')
+            return render(request, 'recruitment/upload.html', {'job_postings': job_postings})
+        
+        # Security: Rate limit check
+        client_ip = get_client_ip(request)
+        if not security_validator.rate_limit_check(client_ip):
+            messages.error(request, 'Too many upload attempts. Please try again in a few minutes.')
+            job_postings = JobPosting.objects.filter(is_active=True).order_by('-created_at')
+            return render(request, 'recruitment/upload.html', {'job_postings': job_postings})
+        
         try:
-            # Get form data
-            name = request.POST.get('name', '').strip()
-            email = request.POST.get('email', '').strip()
-            phone = request.POST.get('phone', '').strip()
-            uploaded_file = request.FILES.get('resume_file')
-            job_id = request.POST.get('job_posting_id')  # NEW!
-            application_source = request.POST.get('application_source', 'direct')
-            
-            # Security: Validate inputs
-            is_valid, errors = security_validator.validate_candidate_input(name, email, phone)
-            if not is_valid:
-                for error in errors:
-                    messages.error(request, error)
-                job_postings = JobPosting.objects.filter(is_active=True).order_by('-created_at')
-                return render(request, 'recruitment/upload.html', {'job_postings': job_postings})
-            
-            # Validate file exists
-            if not uploaded_file:
-                messages.error(request, 'Please select a file to upload')
-                job_postings = JobPosting.objects.filter(is_active=True).order_by('-created_at')
-                return render(request, 'recruitment/upload.html', {'job_postings': job_postings})
-            
-            # Security: Validate file upload
-            is_valid, error_message = security_validator.validate_file_upload(uploaded_file)
-            if not is_valid:
-                messages.error(request, error_message)
-                job_postings = JobPosting.objects.filter(is_active=True).order_by('-created_at')
-                return render(request, 'recruitment/upload.html', {'job_postings': job_postings})
-            
-            # Security: Rate limit check
-            client_ip = get_client_ip(request)
-            if not security_validator.rate_limit_check(client_ip):
-                messages.error(request, 'Too many upload attempts. Please try again later.')
-                job_postings = JobPosting.objects.filter(is_active=True).order_by('-created_at')
-                return render(request, 'recruitment/upload.html', {'job_postings': job_postings})
-            
-            # Check for duplicate email
-            if Candidate.objects.filter(email=email).exists():
-                messages.warning(
-                    request, 
-                    f'A candidate with email {email} already exists. Creating new application.'
-                )
-            
-            # Create candidate
-            candidate = Candidate.objects.create(
-                name=name,
-                email=email,
-                phone=phone,
-                status='received',
-                ip_address=client_ip,
-                application_source=application_source,
-            )
-            
-            # Extract text from file
+            # Extract text from file FIRST
             file_extension = uploaded_file.name.split('.')[-1].lower()
             parsed_text = ""
+            
+            # Reset file pointer
+            uploaded_file.seek(0)
             
             if file_extension == 'pdf':
                 parsed_text = extract_text_from_pdf(uploaded_file)
@@ -133,13 +105,51 @@ def upload_resume(request):
             # Security: Sanitize extracted text
             parsed_text = security_validator.sanitize_text(parsed_text)
             
+            # Check if text extraction worked
+            if len(parsed_text) < 50:
+                messages.error(
+                    request, 
+                    '⚠️ Unable to extract text from resume. Please ensure your file is readable and not password-protected.'
+                )
+                job_postings = JobPosting.objects.filter(is_active=True).order_by('-created_at')
+                return render(request, 'recruitment/upload.html', {'job_postings': job_postings})
+            
             # Security: Detect malicious content
             threats = security_validator.detect_malicious_content(parsed_text)
+            
+            # Calculate file hash for duplicate detection
+            uploaded_file.seek(0)
+            file_hash = hashlib.sha256(uploaded_file.read()).hexdigest()
+            
+            # Check for duplicate file
+            if Resume.objects.filter(candidate__file_hash=file_hash).exists():
+                messages.warning(
+                    request,
+                    '⚠️ This resume has already been uploaded. Redirecting to existing candidate profile.'
+                )
+                existing_candidate = Candidate.objects.get(file_hash=file_hash)
+                return redirect('candidate_detail', pk=existing_candidate.id)
+            
+            # Reset file pointer again
+            uploaded_file.seek(0)
+            
+            # Create candidate with minimal info (will be filled by analyzer)
+            candidate = Candidate.objects.create(
+                name='Processing...',  # Temporary - will be updated by analyzer
+                email=None,  # Will be extracted
+                phone=None,  # Will be extracted
+                status='received',
+                ip_address=client_ip,
+                file_hash=file_hash,
+                application_source='direct'
+            )
+            
+            # Add security flags if threats detected
             if threats:
                 candidate.security_flags = {'threats': threats}
                 candidate.save()
                 for threat in threats:
-                    messages.warning(request, f'Security warning: {threat}')
+                    messages.warning(request, f'🔒 Security note: {threat}')
             
             # Create Resume object
             Resume.objects.create(
@@ -149,134 +159,137 @@ def upload_resume(request):
                 parsed_text=parsed_text
             )
             
-            # Get job posting if selected - NEW!
+            # Get job posting if selected
             job_posting = None
             if job_id:
                 try:
                     job_posting = JobPosting.objects.get(id=job_id, is_active=True)
                 except JobPosting.DoesNotExist:
-                    messages.warning(request, 'Selected job posting not found. Using default scoring.')
+                    pass
             
-            # Analyze resume with job posting if provided
-            scores = analyze_resume(candidate, job_posting=job_posting, use_ml=True)
-            
-            if scores:
-                # If job posting selected, create application - NEW!
-                if job_posting:
-                    CandidateJobApplication.objects.create(
-                        candidate=candidate,
-                        job_posting=job_posting,
-                        job_fit_score=scores['total_score']
-                    )
-                    
-                    # Log workflow event
-                    workflow_tracker.log_custom_event(
-                        candidate,
-                        'application_submitted',
-                        notes=f'Applied for: {job_posting.title}'
-                    )
-                    
-                    messages.success(
-                        request,
-                        f'✅ Resume processed! Score: {scores["total_score"]}/100 for {job_posting.title}'
-                    )
-                else:
-                    messages.success(
-                        request,
-                        f'✅ Resume processed! Overall Score: {scores["total_score"]}/100'
-                    )
+            # Analyze resume (this will extract contact info, skills, etc.)
+            try:
+                print(f"\n🚀 Starting AI analysis for candidate #{candidate.id}")
+                scores = analyze_resume(candidate, job_posting=job_posting, use_ml=True)
                 
-                return redirect('candidate_detail', candidate_id=candidate.id)
-            else:
-                messages.warning(request, 'Resume uploaded but scoring failed. Check admin panel.')
-                return redirect('candidate_detail', candidate_id=candidate.id)
+                if scores:
+                    # Reload candidate to get updated info
+                    candidate.refresh_from_db()
                     
+                    # Check if contact info was extracted
+                    if not candidate.name or candidate.name == 'Processing...':
+                        candidate.name = f"Candidate #{candidate.id}"
+                        candidate.save()
+                        messages.warning(
+                            request,
+                            '⚠️ Unable to extract name from resume. Please update manually in the admin panel.'
+                        )
+                    
+                    if not candidate.email:
+                        messages.warning(
+                            request,
+                            '⚠️ Unable to extract email from resume. Please update manually in the admin panel.'
+                        )
+                    
+                    # # Check ATS readability
+                    # if candidate.ats_readability_score < 70:
+                    #     messages.warning(
+                    #         request,
+                    #         f'⚠️ ATS Readability: {candidate.ats_readability_score}/100 - Resume may have formatting issues'
+                    #     )
+                    #     if candidate.ats_issues:
+                    #         messages.info(
+                    #             request,
+                    #             f"📋 Issues: {', '.join(candidate.ats_issues[:3])}"
+                    #         )
+                    
+                    # # If job posting selected, create application
+                    # if job_posting:
+                    #     CandidateJobApplication.objects.create(
+                    #         candidate=candidate,
+                    #         job_posting=job_posting,
+                    #         job_fit_score=scores['total_score']
+                    #     )
+                    #     messages.success(
+                    #         request,
+                    #         f'✅ Resume analyzed! Score: {scores["total_score"]}/100 for {job_posting.title}'
+                    #     )
+                    # else:
+                    #     messages.success(
+                    #         request,
+                    #         f'✅ Resume analyzed! Overall Score: {scores["total_score"]}/100'
+                    #     )
+                    
+                    # Show extraction summary
+                    if scores.get('contact_info'):
+                        contact = scores['contact_info']
+                        extracted_info = []
+                        if contact.get('name'):
+                            extracted_info.append(f"Name: {contact['name']}")
+                        if contact.get('email'):
+                            extracted_info.append(f"Email: {contact['email']}")
+                        if contact.get('phone'):
+                            extracted_info.append(f"Phone: {contact['phone']}")
+                        
+                        if extracted_info:
+                            messages.info(
+                                request,
+                                f"📇 Extracted: {' | '.join(extracted_info)}"
+                            )
+                    
+                    return redirect('candidate_detail', pk=candidate.id)
+                else:
+                    messages.warning(
+                        request, 
+                        'Resume uploaded but scoring failed. Please review in admin panel.'
+                    )
+                    return redirect('candidate_detail', pk=candidate.id)
+                    
+            except Exception as e:
+                messages.error(request, f'Error analyzing resume: {str(e)}')
+                print(f"Error in analyze_resume: {e}")
+                import traceback
+                traceback.print_exc()
+                return redirect('candidate_detail', pk=candidate.id)
+                
         except Exception as e:
             messages.error(request, f'Error processing file: {str(e)}')
             print(f"Error in upload_resume: {e}")
             import traceback
             traceback.print_exc()
     
-    # GET request - show form with active jobs - NEW!
-    job_postings = JobPosting.objects.filter(is_active=True).select_related('role_profile').order_by('-created_at')
+    # GET request - show upload form
+    job_postings = JobPosting.objects.filter(is_active=True).order_by('-created_at')
     
     return render(request, 'recruitment/upload.html', {'job_postings': job_postings})
 
 
-from django.core.paginator import Paginator
-from django.db.models import Q
-
 def candidate_list(request):
-    """Display list of all candidates with filters, search, and pagination"""
-    
-    # Get all candidates
-    candidates = Candidate.objects.all().select_related('score')
-    
-    # Search functionality
-    search_query = request.GET.get('search', '')
-    if search_query:
-        candidates = candidates.filter(
-            Q(name__icontains=search_query) |
-            Q(email__icontains=search_query) |
-            Q(phone__icontains=search_query)
-        )
-    
-    # Status filter
-    status_filter = request.GET.get('status', '')
-    if status_filter:
-        candidates = candidates.filter(status=status_filter)
-    
-    # Source filter
-    source_filter = request.GET.get('source', '')
-    if source_filter:
-        candidates = candidates.filter(application_source=source_filter)
-    
-    # Sort functionality
-    sort_by = request.GET.get('sort', '-created_at')
-    valid_sorts = [
-        '-created_at', 'created_at', 
-        '-score__total_score', 'score__total_score',
-        'name', '-name'
-    ]
-    if sort_by in valid_sorts:
-        candidates = candidates.order_by(sort_by)
-    else:
-        candidates = candidates.order_by('-created_at')
-    
-    # Pagination (20 per page)
-    paginator = Paginator(candidates, 20)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-    
-    # Status choices for filter dropdown
-    status_choices = Candidate._meta.get_field('status').choices
+    """Display list of all candidates"""
+    candidates = Candidate.objects.all().select_related('score').order_by('-created_at')
     
     context = {
-        'page_obj': page_obj,
-        'search_query': search_query,
-        'status_filter': status_filter,
-        'source_filter': source_filter,
-        'sort_by': sort_by,
-        'status_choices': status_choices,
+        'candidates': candidates
     }
     
     return render(request, 'recruitment/candidate_list.html', context)
 
 
-@login_required
-@permission_required('recruitment.view_candidate', raise_exception=True)
-def candidate_detail(request, candidate_id):
-    """Display detailed view of a single candidate - FIXED!"""
-    candidate = get_object_or_404(Candidate, pk=candidate_id)
+def candidate_detail(request, pk):
+    """Display detailed view of a single candidate"""
+    candidate = get_object_or_404(Candidate, pk=pk)
     
     # Get related data
     education = candidate.education.all()
     experience = candidate.experience.all()
-    skills = candidate.skills.all()
+    skills = candidate.extracted_skills.all()
     
-    # Get job applications - NEW!
-    job_applications = candidate.job_applications.all().select_related('job_posting__role_profile')
+    # Separate skills by source
+    regex_skills = skills.filter(matched_via='regex')
+    esco_skills = skills.filter(matched_via='esco')
     
+    # Get job applications
+    job_applications = candidate.job_applications.all().select_related('job_posting')
     # Get workflow events
     timeline = workflow_tracker.get_candidate_timeline(candidate)
     
@@ -285,6 +298,8 @@ def candidate_detail(request, candidate_id):
         'education': education,
         'experience': experience,
         'skills': skills,
+        'regex_skills': regex_skills,
+        'esco_skills': esco_skills,
         'job_applications': job_applications,
         'timeline': timeline,
     }
@@ -293,7 +308,7 @@ def candidate_detail(request, candidate_id):
 
 
 def dashboard(request):
-    """Main dashboard view - ALL USERS CAN VIEW"""
+    """Main dashboard view"""
     # Get all candidates with scores
     candidates = Candidate.objects.filter(score__isnull=False).select_related('score').order_by('-score__total_score')
     
@@ -316,10 +331,9 @@ def dashboard(request):
     return render(request, 'recruitment/dashboard.html', context)
 
 
-@login_required
 def analytics_dashboard(request):
-    """Analytics and insights dashboard - ALL LOGGED IN USERS"""
-    report = analytics_engine.generate_executive_summary()
+    """Analytics and insights dashboard"""
+    report = analytics_engine.generate_comprehensive_report()
     
     context = {
         'report': report,
@@ -348,7 +362,7 @@ def system_health(request):
 
 def export_analytics_report(request):
     """Export analytics as JSON"""
-    report = analytics_engine.generate_executive_summary()
+    report = analytics_engine.generate_comprehensive_report()
     
     response = HttpResponse(
         json.dumps(report, indent=2, default=str),
@@ -359,12 +373,11 @@ def export_analytics_report(request):
     return response
 
 
-@login_required
-@permission_required('recruitment.change_candidate', raise_exception=True)
-def update_candidate_status(request, candidate_id):
-    """Update candidate status - HR ADMIN + HIRING MANAGER ONLY - FIXED!"""
+@staff_member_required
+def update_candidate_status(request, pk):
+    """Update candidate status"""
     if request.method == 'POST':
-        candidate = get_object_or_404(Candidate, pk=candidate_id)
+        candidate = get_object_or_404(Candidate, pk=pk)
         new_status = request.POST.get('status')
         notes = request.POST.get('notes', '')
         
@@ -379,7 +392,7 @@ def update_candidate_status(request, candidate_id):
             
             messages.success(request, f'Status updated to {new_status}')
         
-        return redirect('candidate_detail', candidate_id=candidate_id)
+        return redirect('candidate_detail', pk=pk)
     
     return redirect('dashboard')
 
@@ -387,7 +400,7 @@ def update_candidate_status(request, candidate_id):
 # API Endpoints
 def api_analytics_summary(request):
     """API: Get analytics summary"""
-    report = analytics_engine.generate_executive_summary()
+    report = analytics_engine.generate_comprehensive_report()
     return JsonResponse(report)
 
 
@@ -409,16 +422,16 @@ def api_system_health(request):
     return JsonResponse(health)
 
 
-def api_candidate_timeline(request, candidate_id):
-    """API: Get candidate timeline - FIXED!"""
-    candidate = get_object_or_404(Candidate, pk=candidate_id)
+def api_candidate_timeline(request, pk):
+    """API: Get candidate timeline"""
+    candidate = get_object_or_404(Candidate, pk=pk)
     timeline = workflow_tracker.get_candidate_timeline(candidate)
     return JsonResponse({'timeline': timeline})
 
 
-def debug_resume(request, candidate_id):
-    """Debug view to see raw extracted text - FIXED!"""
-    candidate = get_object_or_404(Candidate, pk=candidate_id)
+def debug_resume(request, pk):
+    """Debug view to see raw extracted text"""
+    candidate = get_object_or_404(Candidate, pk=pk)
     
     if hasattr(candidate, 'resume'):
         text = candidate.resume.parsed_text
@@ -429,7 +442,7 @@ def debug_resume(request, candidate_id):
 
 
 # ============================================================================
-# JOB POSTING VIEWS
+# JOB POSTINGS AND CUSTOMIZABLE SCORING
 # ============================================================================
 
 @staff_member_required
@@ -504,7 +517,7 @@ def job_posting_detail(request, job_id):
     candidate_matches = []
     for candidate in candidates:
         # Get candidate skills
-        candidate_skills = [s.skill_name for s in candidate.skills.all()]
+        candidate_skills = [s.skill.canonical_name for s in candidate.extracted_skills.all()]
         
         # Match against required skills
         skill_match = match_required_skills(candidate_skills, job.required_skills)
@@ -553,7 +566,7 @@ def apply_candidate_to_job(request, candidate_id, job_id):
     job = get_object_or_404(JobPosting, id=job_id)
     
     # Get candidate skills
-    candidate_skills = [s.skill_name for s in candidate.skills.all()]
+    candidate_skills = [s.skill.canonical_name for s in candidate.extracted_skills.all()]
     
     # Match skills
     skill_match = match_required_skills(candidate_skills, job.required_skills)
@@ -588,7 +601,7 @@ def apply_candidate_to_job(request, candidate_id, job_id):
     else:
         messages.info(request, f'Updated job fit score for {candidate.name}: {job_fit}%')
     
-    return redirect('candidate_detail', candidate_id=candidate_id)
+    return redirect('candidate_detail', pk=candidate_id)
 
 
 @staff_member_required
@@ -625,7 +638,7 @@ def compare_candidates(request):
             'candidate': candidate,
             'education': list(candidate.education.all()),
             'experience': list(candidate.experience.all()),
-            'skills': list(candidate.skills.all()),
+            'skills': list(candidate.extracted_skills.all()),
             'years_experience': candidate.years_experience,
         }
         comparison.append(data)
@@ -635,3 +648,43 @@ def compare_candidates(request):
     }
     
     return render(request, 'recruitment/compare_candidates.html', context)
+
+
+# Export candidates CSV
+def export_candidates_csv(request):
+    """Export candidates to CSV"""
+    import csv
+    from django.utils import timezone
+    
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = f'attachment; filename="candidates_{timezone.now().strftime("%Y%m%d")}.csv"'
+    
+    writer = csv.writer(response)
+    writer.writerow([
+        'Name', 'Email', 'Phone', 'Status', 
+        'Total Score', 'Education Score', 'Experience Score', 
+        'Skills Score', 'Islamic Finance Score',
+        'Years Experience', 'ATS Readability',
+        'Created At'
+    ])
+    
+    candidates = Candidate.objects.select_related('score').all()
+    
+    for candidate in candidates:
+        score = candidate.score if hasattr(candidate, 'score') else None
+        writer.writerow([
+            candidate.name,
+            candidate.email,
+            candidate.phone,
+            candidate.get_status_display(),
+            score.total_score if score else 0,
+            score.education_score if score else 0,
+            score.experience_score if score else 0,
+            score.skills_score if score else 0,
+            score.islamic_finance_score if score else 0,
+            candidate.years_experience,
+            candidate.ats_readability_score,
+            candidate.created_at.strftime('%Y-%m-%d %H:%M'),
+        ])
+    
+    return response

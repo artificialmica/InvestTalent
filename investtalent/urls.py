@@ -10,7 +10,7 @@ urlpatterns = [
     # Main pages
     path('', views.dashboard, name='dashboard'),
     path('upload/', views.upload_resume, name='upload_resume'),
-    path('candidate/<int:candidate_id>/', views.candidate_detail, name='candidate_detail'),
+    path('candidate/<int:pk>/', views.candidate_detail, name='candidate_detail'),  # FIXED: pk not candidate_id
     
     # Job Postings
     path('jobs/create/', views.create_job_posting, name='create_job_posting'),
@@ -25,7 +25,7 @@ urlpatterns = [
     path('export-report/', views.export_analytics_report, name='export_report'),
     
     # Actions
-    path('candidate/<int:candidate_id>/update-status/', views.update_candidate_status, name='update_status'),
+    path('candidate/<int:pk>/update-status/', views.update_candidate_status, name='update_status'),  # FIXED: pk
     path('compare/', views.compare_candidates, name='compare_candidates'),
     
     # API Endpoints
@@ -33,8 +33,8 @@ urlpatterns = [
     path('api/fairness/', views.api_fairness_report, name='api_fairness'),
     path('api/workflow/', views.api_workflow_report, name='api_workflow'),
     path('api/health/', views.api_system_health, name='api_health'),
-    path('api/candidate/<int:candidate_id>/timeline/', views.api_candidate_timeline, name='api_timeline'),
-    path('debug/<int:candidate_id>/', views.debug_resume, name='debug_resume'),
+    path('api/candidate/<int:pk>/timeline/', views.api_candidate_timeline, name='api_timeline'),  # FIXED: pk
+    path('debug/<int:pk>/', views.debug_resume, name='debug_resume'),  # FIXED: pk
 ]
 
 if settings.DEBUG:

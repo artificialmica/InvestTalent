@@ -583,13 +583,20 @@
     <div class="navbar">
         <h1>🎯 InvestTalent-AI Dashboard</h1>
         <p>AI-Powered Recruitment System for Arcapita Investment Holdings</p>
+        <div class="nav-links" style="margin-top: 15px;">
+            <a href="{% url 'dashboard' %}" style="color: white; text-decoration: none; margin-right: 20px; font-weight: bold;">📋 Candidates</a>
+            <a href="{% url 'job_list' %}" style="color: white; text-decoration: none; margin-right: 20px; opacity: 0.9;">💼 Job Postings</a>
+            <a href="{% url 'analytics' %}" style="color: white; text-decoration: none; margin-right: 20px; opacity: 0.9;">📊 Analytics</a>
+            <a href="{% url 'fairness_report' %}" style="color: white; text-decoration: none; margin-right: 20px; opacity: 0.9;">⚖️ Fairness</a>
+        </div>
     </div>
     
     <div class="container">
         <!-- Top Action Buttons -->
         <div class="top-actions">
             <a href="{% url 'upload_resume' %}" class="btn btn-upload">➕ Upload New Resume</a>
-            <a href="{% url 'analytics_dashboard' %}" class="btn btn-analytics">📊 Analytics</a>
+            <a href="{% url 'job_list' %}" class="btn btn-primary" style="background: #28a745;">💼 Job Postings</a>
+            <a href="{% url 'analytics' %}" class="btn btn-analytics">📊 Analytics</a>
         </div>
         
         <!-- Statistics Cards -->

@@ -1,40 +1,48 @@
+"""
+InvestTalent-AI URL Configuration
+"""
+
 from django.contrib import admin
-from django.urls import path
 from django.conf import settings
 from django.conf.urls.static import static
+from django.urls import path
 from recruitment import views
 
 urlpatterns = [
+    # ADMIN
     path('admin/', admin.site.urls),
     
-    # Main pages
+    # MAIN PAGES
     path('', views.dashboard, name='dashboard'),
     path('upload/', views.upload_resume, name='upload_resume'),
-    path('candidate/<int:pk>/', views.candidate_detail, name='candidate_detail'),  # FIXED: pk not candidate_id
     
-    # Job Postings
-    path('jobs/create/', views.create_job_posting, name='create_job_posting'),
-    path('jobs/<int:job_id>/', views.job_posting_detail, name='job_posting_detail'),
-    path('candidate/<int:candidate_id>/apply/<int:job_id>/', views.apply_candidate_to_job, name='apply_to_job'),
-    path('api/skill-variations/', views.skill_variations, name='skill_variations'),
+    # CANDIDATE PAGES
+    path('candidate/<int:pk>/', views.candidate_detail, name='candidate_detail'),
+    path('candidate/<int:pk>/update-status/', views.update_candidate_status, name='update_status'),
+    path('compare/', views.compare_candidates, name='compare_candidates'),
     
-    # Analytics & Reports
-    path('analytics/', views.analytics_dashboard, name='analytics_dashboard'),
+    # JOB POSTINGS
+    path('jobs/', views.job_list, name='job_list'),
+    path('jobs/create/', views.job_create, name='job_create'),
+    path('jobs/<int:job_id>/', views.job_detail, name='job_detail'),
+    path('jobs/<int:job_id>/match/', views.job_match, name='job_match'),
+    
+    # ANALYTICS & REPORTS
+    path('analytics/', views.analytics_dashboard, name='analytics'),
     path('fairness/', views.fairness_report, name='fairness_report'),
     path('system-health/', views.system_health, name='system_health'),
     path('export-report/', views.export_analytics_report, name='export_report'),
     
-    # Actions
-    path('candidate/<int:pk>/update-status/', views.update_candidate_status, name='update_status'),  # FIXED: pk
-    path('compare/', views.compare_candidates, name='compare_candidates'),
-    
-    # API Endpoints
+    # API ENDPOINTS
     path('api/analytics/', views.api_analytics_summary, name='api_analytics'),
     path('api/fairness/', views.api_fairness_report, name='api_fairness'),
     path('api/workflow/', views.api_workflow_report, name='api_workflow'),
     path('api/health/', views.api_system_health, name='api_health'),
-    path('api/candidate/<int:pk>/timeline/', views.api_candidate_timeline, name='api_timeline'),  # FIXED: pk
-    path('debug/<int:pk>/', views.debug_resume, name='debug_resume'),  # FIXED: pk
+    path('api/candidate/<int:pk>/timeline/', views.api_candidate_timeline, name='api_timeline'),
+    path('api/skill-variations/', views.skill_variations, name='skill_variations'),
+    
+    # DEBUG
+    path('debug/<int:pk>/', views.debug_resume, name='debug_resume'),
 ]
 
 if settings.DEBUG:

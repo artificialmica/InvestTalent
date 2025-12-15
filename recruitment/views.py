@@ -279,9 +279,48 @@ def candidate_detail(request, pk):
 
 
 def dashboard(request):
-    """Main dashboard view with filtering and comparison support"""
+    """Main dashboard view with weight slider support"""
+    from django.db.models import Avg
+    
+    # Check if re-scoring requested
+    action = request.GET.get('action')
+    if action == 'rescore':
+        # Get custom weights from request
+        edu_weight = float(request.GET.get('education_weight', 0.25))
+        exp_weight = float(request.GET.get('experience_weight', 0.30))
+        skill_weight = float(request.GET.get('skills_weight', 0.25))
+        if_weight = float(request.GET.get('islamic_finance_weight', 0.20))
+        
+        # Re-score all candidates - ACTUALLY call analyze_resume to re-extract skills!
+        candidates_to_rescore = Candidate.objects.filter(score__isnull=False)
+        rescored_count = 0
+        
+        for candidate in candidates_to_rescore:
+            try:
+                # ACTUALLY RE-ANALYZE the resume (this re-extracts skills with new filters!)
+                if hasattr(candidate, 'resume') and candidate.resume.parsed_text:
+                    print(f"\n{'='*60}")
+                    print(f"RE-SCORING: {candidate.name}")
+                    print(f"{'='*60}")
+                    analyze_resume(candidate, job_posting=None, use_ml=True)
+                    rescored_count += 1
+                else:
+                    print(f"Skipping {candidate.name} - no resume text")
+            except Exception as e:
+                print(f"Error rescoring {candidate.name}: {e}")
+                import traceback
+                traceback.print_exc()
+        
+        # Update ranks after all rescoring is done
+        all_scores = Score.objects.all().order_by('-total_score')
+        for i, score in enumerate(all_scores, 1):
+            score.rank = i
+            score.save()
+        
+        messages.success(request, f'✅ Re-scored {rescored_count} candidates! Skills re-extracted with domain filtering.')
+    
     # Get filter parameters
-    search_query = request.GET.get('search', '').strip()
+    search_query = request.GET.get('search', '')
     status_filter = request.GET.get('status', '')
     min_score = request.GET.get('min_score', '')
     
@@ -311,21 +350,17 @@ def dashboard(request):
     # Get statistics
     total_candidates = Candidate.objects.count()
     shortlisted_count = Candidate.objects.filter(status='shortlisted').count()
-    total_hired = Candidate.objects.filter(status='hired').count()
-    total_rejected = Candidate.objects.filter(status='rejected').count()
     avg_score = Candidate.objects.filter(score__isnull=False).aggregate(
-        avg=models.Avg('score__total_score')
+        avg=Avg('score__total_score')
     )['avg'] or 0
     
     # Status choices for filter dropdown
-    status_choices = Candidate.STATUS_CHOICES
+    status_choices = Candidate._meta.get_field('status').choices
     
     context = {
         'candidates': candidates[:50],  # Top 50
         'total_candidates': total_candidates,
         'shortlisted_count': shortlisted_count,
-        'total_hired': total_hired,
-        'total_rejected': total_rejected,
         'avg_score': round(avg_score, 1),
         'search_query': search_query,
         'status_filter': status_filter,
@@ -446,169 +481,6 @@ def debug_resume(request, pk):
     return HttpResponse(f"<pre>{text}</pre>")
 
 
-# ============================================================================
-# JOB POSTINGS AND CUSTOMIZABLE SCORING
-# ============================================================================
-
-@staff_member_required
-def create_job_posting(request):
-    """Allow HR to create job with custom requirements and weights"""
-    if request.method == 'POST':
-        title = request.POST.get('title')
-        department = request.POST.get('department', '')
-        description = request.POST.get('description', '')
-        
-        # Skills
-        required_skills_text = request.POST.get('required_skills', '')
-        required_skills = [s.strip() for s in required_skills_text.split(',') if s.strip()]
-        
-        preferred_skills_text = request.POST.get('preferred_skills', '')
-        preferred_skills = [s.strip() for s in preferred_skills_text.split(',') if s.strip()]
-        
-        # Experience
-        min_years = int(request.POST.get('min_years_experience', 0))
-        max_years = request.POST.get('max_years_experience')
-        if max_years:
-            max_years = int(max_years)
-        
-        # Education
-        min_education = request.POST.get('min_education_level', '')
-        required_certs = request.POST.get('required_certifications', '')
-        special_req = request.POST.get('special_requirements', '')
-        
-        # Weights
-        edu_weight = float(request.POST.get('education_weight', 0.25))
-        exp_weight = float(request.POST.get('experience_weight', 0.30))
-        skill_weight = float(request.POST.get('skills_weight', 0.25))
-        if_weight = float(request.POST.get('islamic_finance_weight', 0.20))
-        hard_weight = float(request.POST.get('hard_skills_weight', 0.70))
-        soft_weight = float(request.POST.get('soft_skills_weight', 0.30))
-        
-        # Create job posting
-        job = JobPosting.objects.create(
-            title=title,
-            department=department,
-            description=description,
-            required_skills=required_skills,
-            preferred_skills=preferred_skills,
-            min_years_experience=min_years,
-            max_years_experience=max_years,
-            min_education_level=min_education,
-            required_certifications=required_certs,
-            special_requirements=special_req,
-            education_weight=edu_weight,
-            experience_weight=exp_weight,
-            skills_weight=skill_weight,
-            islamic_finance_weight=if_weight,
-            hard_skills_weight=hard_weight,
-            soft_skills_weight=soft_weight,
-            created_by=request.user.username if request.user.is_authenticated else 'HR Manager'
-        )
-        
-        messages.success(request, f'Job posting "{title}" created successfully!')
-        return redirect('job_posting_detail', job_id=job.id)
-    
-    return render(request, 'recruitment/create_job_posting.html')
-
-
-def job_posting_detail(request, job_id):
-    """View job posting and matched candidates"""
-    job = get_object_or_404(JobPosting, id=job_id)
-    
-    # Get all candidates with scores
-    candidates = Candidate.objects.filter(score__isnull=False).select_related('score')
-    
-    # Calculate job fit for each candidate
-    candidate_matches = []
-    for candidate in candidates:
-        # Get candidate skills
-        candidate_skills = [s.skill.canonical_name for s in candidate.extracted_skills.all()]
-        
-        # Match against required skills
-        skill_match = match_required_skills(candidate_skills, job.required_skills)
-        
-        # Calculate job-specific score
-        job_fit = (
-            (candidate.score.education_score * job.education_weight) +
-            (candidate.score.experience_score * job.experience_weight) +
-            (candidate.score.skills_score * job.skills_weight) +
-            (candidate.score.islamic_finance_score * job.islamic_finance_weight)
-        )
-        
-        # Adjust for skill match
-        if skill_match['match_percentage'] < 50:
-            job_fit *= 0.8
-        elif skill_match['match_percentage'] >= 80:
-            job_fit *= 1.1
-        
-        job_fit = min(100, round(job_fit, 2))
-        
-        candidate_matches.append({
-            'candidate': candidate,
-            'job_fit_score': job_fit,
-            'skill_match_percentage': skill_match['match_percentage'],
-            'matched_skills': skill_match['matched_count'],
-            'total_required': skill_match['total_required'],
-            'matches': skill_match['matches']
-        })
-    
-    # Sort by job fit score
-    candidate_matches.sort(key=lambda x: x['job_fit_score'], reverse=True)
-    
-    context = {
-        'job': job,
-        'candidate_matches': candidate_matches[:20],  # Top 20
-        'total_candidates': len(candidate_matches)
-    }
-    
-    return render(request, 'recruitment/job_posting_detail.html', context)
-
-
-@staff_member_required
-def apply_candidate_to_job(request, candidate_id, job_id):
-    """Link candidate to specific job and calculate fit score"""
-    candidate = get_object_or_404(Candidate, id=candidate_id)
-    job = get_object_or_404(JobPosting, id=job_id)
-    
-    # Get candidate skills
-    candidate_skills = [s.skill.canonical_name for s in candidate.extracted_skills.all()]
-    
-    # Match skills
-    skill_match = match_required_skills(candidate_skills, job.required_skills)
-    
-    # Calculate job fit
-    if hasattr(candidate, 'score'):
-        job_fit = (
-            (candidate.score.education_score * job.education_weight) +
-            (candidate.score.experience_score * job.experience_weight) +
-            (candidate.score.skills_score * job.skills_weight) +
-            (candidate.score.islamic_finance_score * job.islamic_finance_weight)
-        )
-        
-        if skill_match['match_percentage'] < 50:
-            job_fit *= 0.8
-        elif skill_match['match_percentage'] >= 80:
-            job_fit *= 1.1
-        
-        job_fit = min(100, round(job_fit, 2))
-    else:
-        job_fit = 0
-    
-    # Create or update application
-    app, created = CandidateJobApplication.objects.update_or_create(
-        candidate=candidate,
-        job_posting=job,
-        defaults={'job_fit_score': job_fit}
-    )
-    
-    if created:
-        messages.success(request, f'{candidate.name} applied to {job.title}. Job fit: {job_fit}%')
-    else:
-        messages.info(request, f'Updated job fit score for {candidate.name}: {job_fit}%')
-    
-    return redirect('candidate_detail', pk=candidate_id)
-
-
 @staff_member_required
 def skill_variations(request):
     """Help HR see variations of a skill (API endpoint)"""
@@ -705,94 +577,553 @@ def export_candidates_csv(request):
     
     return response
 
-def dashboard(request):
-    """Main dashboard view with weight slider support"""
-    from django.db.models import Avg
+
+# ============================================================================
+# JOB POSTING FEATURE - STYLED TO MATCH DASHBOARD
+# ============================================================================
+
+from django.db.models import Avg
+from .models import JobRoleProfile, SkillDefinition, SkillCategory
+from .job_matching import match_candidate_to_job, match_all_candidates, save_application
+
+
+def job_list(request):
+    """List all job postings - styled to match dashboard."""
+    jobs = JobPosting.objects.filter(is_active=True).select_related('role_profile')
     
-    # Check if re-scoring requested
-    action = request.GET.get('action')
-    if action == 'rescore':
-        # Get custom weights from request
-        edu_weight = float(request.GET.get('education_weight', 0.25))
-        exp_weight = float(request.GET.get('experience_weight', 0.30))
-        skill_weight = float(request.GET.get('skills_weight', 0.25))
-        if_weight = float(request.GET.get('islamic_finance_weight', 0.20))
+    rows = ""
+    for job in jobs:
+        apps = CandidateJobApplication.objects.filter(job_posting=job)
+        count = apps.count()
+        avg = apps.aggregate(Avg('job_fit_score'))['job_fit_score__avg'] or 0
+        req_count = job.role_profile.required_skills.count() if job.role_profile else 0
+        pref_count = job.role_profile.preferred_skills.count() if job.role_profile else 0
         
-        # Re-score all candidates - ACTUALLY call analyze_resume to re-extract skills!
-        candidates_to_rescore = Candidate.objects.filter(score__isnull=False)
-        rescored_count = 0
+        # Score badge color
+        if avg >= 70:
+            score_style = "background: linear-gradient(135deg, #28a745, #20c997); color: white;"
+        elif avg >= 50:
+            score_style = "background: linear-gradient(135deg, #ffc107, #fd7e14); color: #333;"
+        elif count > 0:
+            score_style = "background: #f8d7da; color: #721c24;"
+        else:
+            score_style = "background: #e9ecef; color: #6c757d;"
         
-        for candidate in candidates_to_rescore:
-            try:
-                # ACTUALLY RE-ANALYZE the resume (this re-extracts skills with new filters!)
-                if hasattr(candidate, 'resume') and candidate.resume.parsed_text:
-                    print(f"\n{'='*60}")
-                    print(f"RE-SCORING: {candidate.name}")
-                    print(f"{'='*60}")
-                    analyze_resume(candidate, job_posting=None, use_ml=True)
-                    rescored_count += 1
-                else:
-                    print(f"Skipping {candidate.name} - no resume text")
-            except Exception as e:
-                print(f"Error rescoring {candidate.name}: {e}")
-                import traceback
-                traceback.print_exc()
-        
-        # Update ranks after all rescoring is done
-        all_scores = Score.objects.all().order_by('-total_score')
-        for i, score in enumerate(all_scores, 1):
-            score.rank = i
-            score.save()
-        
-        messages.success(request, f'✅ Re-scored {rescored_count} candidates! Skills re-extracted with domain filtering.')
+        rows += f'''
+        <tr style="border-bottom: 1px solid #eee; transition: background 0.2s;" onmouseover="this.style.background='#f8f9ff'" onmouseout="this.style.background='white'">
+            <td style="padding: 18px 15px;">
+                <a href="/jobs/{job.id}/" style="color: #667eea; font-weight: 600; text-decoration: none; font-size: 15px;">{job.title}</a>
+                <br><small style="color: #888;">{job.department or "No department"}</small>
+            </td>
+            <td style="padding: 18px 15px; text-align: center;">
+                <span style="background: #fee2e2; color: #991b1b; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600;">{req_count}</span>
+            </td>
+            <td style="padding: 18px 15px; text-align: center;">
+                <span style="background: #d1fae5; color: #065f46; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600;">{pref_count}</span>
+            </td>
+            <td style="padding: 18px 15px; text-align: center; font-weight: 600; color: #333;">{count}</td>
+            <td style="padding: 18px 15px; text-align: center;">
+                <span style="{score_style} padding: 6px 14px; border-radius: 20px; font-weight: bold; font-size: 13px;">{avg:.0f}%</span>
+            </td>
+            <td style="padding: 18px 15px; text-align: center;">
+                <a href="/jobs/{job.id}/match/" style="background: #28a745; color: white; padding: 6px 12px; border-radius: 5px; text-decoration: none; font-size: 12px; margin-right: 5px;">🔄 Match</a>
+                <a href="/jobs/{job.id}/" style="background: #667eea; color: white; padding: 6px 12px; border-radius: 5px; text-decoration: none; font-size: 12px;">View</a>
+            </td>
+        </tr>'''
     
-    # Get filter parameters
-    search_query = request.GET.get('search', '')
-    status_filter = request.GET.get('status', '')
-    min_score = request.GET.get('min_score', '')
-    
-    # Base queryset
-    candidates = Candidate.objects.filter(score__isnull=False).select_related('score')
-    
-    # Apply filters
-    if search_query:
-        candidates = candidates.filter(
-            models.Q(name__icontains=search_query) | 
-            models.Q(email__icontains=search_query)
-        )
-    
-    if status_filter:
-        candidates = candidates.filter(status=status_filter)
-    
-    if min_score:
-        try:
-            min_score_val = float(min_score)
-            candidates = candidates.filter(score__total_score__gte=min_score_val)
-        except ValueError:
-            pass
-    
-    # Order by score
-    candidates = candidates.order_by('-score__total_score')
-    
-    # Get statistics
+    # Calculate stats
+    total_jobs = len(jobs)
+    total_matches = sum(CandidateJobApplication.objects.filter(job_posting=j).count() for j in jobs)
+    jobs_with_qualified = sum(1 for j in jobs if CandidateJobApplication.objects.filter(job_posting=j, job_fit_score__gte=50).exists())
     total_candidates = Candidate.objects.count()
-    shortlisted_count = Candidate.objects.filter(status='shortlisted').count()
-    avg_score = Candidate.objects.filter(score__isnull=False).aggregate(
-        avg=Avg('score__total_score')
-    )['avg'] or 0
     
-    # Status choices for filter dropdown
-    status_choices = Candidate._meta.get_field('status').choices
+    html = f'''
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Job Postings - InvestTalent-AI</title>
+        <style>
+            * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+            body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f7fa; }}
+            .navbar {{
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                padding: 20px 40px;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            }}
+            .navbar h1 {{ font-size: 24px; margin-bottom: 5px; }}
+            .navbar p {{ opacity: 0.9; font-size: 14px; }}
+            .nav-links {{ margin-top: 15px; }}
+            .nav-links a {{ color: white; text-decoration: none; margin-right: 25px; opacity: 0.9; font-weight: 500; }}
+            .nav-links a:hover {{ opacity: 1; }}
+            .nav-links a.active {{ opacity: 1; font-weight: 700; border-bottom: 2px solid white; padding-bottom: 5px; }}
+            .container {{ max-width: 1200px; margin: 0 auto; padding: 30px 40px; }}
+            .header-row {{ display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }}
+            .btn-create {{
+                background: linear-gradient(135deg, #28a745, #20c997);
+                color: white;
+                padding: 12px 24px;
+                border-radius: 8px;
+                text-decoration: none;
+                font-weight: 600;
+                box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+                transition: transform 0.2s, box-shadow 0.2s;
+            }}
+            .btn-create:hover {{ transform: translateY(-2px); box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4); }}
+            .stats-row {{ display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 25px; }}
+            .stat-card {{
+                background: white;
+                padding: 20px;
+                border-radius: 10px;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+                text-align: center;
+                border-left: 4px solid #667eea;
+            }}
+            .stat-card .value {{ font-size: 28px; font-weight: bold; color: #333; }}
+            .stat-card .label {{ font-size: 12px; color: #888; text-transform: uppercase; margin-top: 5px; }}
+            .table-card {{
+                background: white;
+                border-radius: 12px;
+                box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+                overflow: hidden;
+            }}
+            table {{ width: 100%; border-collapse: collapse; }}
+            thead {{ background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }}
+            th {{ padding: 15px; text-align: left; color: white; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }}
+            th:nth-child(2), th:nth-child(3), th:nth-child(4), th:nth-child(5), th:nth-child(6) {{ text-align: center; }}
+            tbody tr {{ background: white; }}
+        </style>
+    </head>
+    <body>
+        <div class="navbar">
+            <h1>💼 Job Postings</h1>
+            <p>Manage job requirements and match candidates</p>
+            <div class="nav-links">
+                <a href="/">📋 Candidates</a>
+                <a href="/jobs/" class="active">💼 Job Postings</a>
+                <a href="/analytics/">📊 Analytics</a>
+                <a href="/fairness/">⚖️ Fairness</a>
+            </div>
+        </div>
+        
+        <div class="container">
+            <div class="header-row">
+                <h2 style="color: #333;">Active Positions</h2>
+                <a href="/jobs/create/" class="btn-create">➕ Create New Job</a>
+            </div>
+            
+            <div class="stats-row">
+                <div class="stat-card">
+                    <div class="value">{total_jobs}</div>
+                    <div class="label">Active Jobs</div>
+                </div>
+                <div class="stat-card">
+                    <div class="value">{total_matches}</div>
+                    <div class="label">Total Matches</div>
+                </div>
+                <div class="stat-card">
+                    <div class="value">{jobs_with_qualified}</div>
+                    <div class="label">Jobs with Qualified</div>
+                </div>
+                <div class="stat-card">
+                    <div class="value">{total_candidates}</div>
+                    <div class="label">Total Candidates</div>
+                </div>
+            </div>
+            
+            <div class="table-card">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Job Title</th>
+                            <th>Required</th>
+                            <th>Preferred</th>
+                            <th>Candidates</th>
+                            <th>Avg Score</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {rows if rows else '<tr><td colspan="6" style="padding: 50px; text-align: center; color: #888;"><h3>No job postings yet</h3><p style="margin-top:10px;">Create your first job to start matching candidates</p><a href="/jobs/create/" style="display:inline-block;margin-top:15px;background:#667eea;color:white;padding:10px 20px;border-radius:5px;text-decoration:none;">Create Job</a></td></tr>'}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </body>
+    </html>'''
     
-    context = {
-        'candidates': candidates[:50],  # Top 50
-        'total_candidates': total_candidates,
-        'shortlisted_count': shortlisted_count,
-        'avg_score': round(avg_score, 1),
-        'search_query': search_query,
-        'status_filter': status_filter,
-        'min_score': min_score,
-        'status_choices': status_choices,
-    }
+    return HttpResponse(html)
+
+
+def job_create(request):
+    """Create a job posting."""
+    if request.method == 'POST':
+        title = request.POST.get('title', '').strip()
+        department = request.POST.get('department', '').strip()
+        min_exp = int(request.POST.get('min_experience', 0))
+        domain = request.POST.get('domain', 'General')
+        
+        # Create role profile
+        profile = JobRoleProfile.objects.create(name=f"{title} Profile", min_experience=min_exp, domain=domain)
+        
+        # Add skills
+        req_ids = request.POST.getlist('required_skills')
+        pref_ids = request.POST.getlist('preferred_skills')
+        if req_ids: profile.required_skills.set(req_ids)
+        if pref_ids: profile.preferred_skills.set(pref_ids)
+        
+        # Create job
+        job = JobPosting.objects.create(
+            title=title, department=department, role_profile=profile,
+            education_weight=float(request.POST.get('education_weight', 20))/100,
+            experience_weight=float(request.POST.get('experience_weight', 25))/100,
+            skills_weight=float(request.POST.get('skills_weight', 25))/100,
+            hard_skills_weight=float(request.POST.get('hard_skills_weight', 15))/100,
+            soft_skills_weight=float(request.POST.get('soft_skills_weight', 10))/100,
+            domain_weight=float(request.POST.get('domain_weight', 5))/100,
+        )
+        
+        return redirect('job_match', job_id=job.pk)
     
-    return render(request, 'recruitment/dashboard.html', context)
+    # Build skill checkboxes
+    skill_html = ""
+    for cat in SkillCategory.objects.all():
+        skills = SkillDefinition.objects.filter(category=cat).order_by('canonical_name')[:20]
+        if skills:
+            boxes = "".join([f'<label style="display:inline-block;margin:3px;padding:4px 8px;background:#f0f0f0;border-radius:10px;font-size:12px;cursor:pointer;"><input type="checkbox" name="required_skills" value="{s.id}" style="margin-right:4px;">{s.canonical_name}</label>' for s in skills])
+            skill_html += f'<div style="margin-bottom:10px;"><strong style="color:#667eea;">{cat.name.title()}</strong><div>{boxes}</div></div>'
+    
+    html = f'''
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Create Job - InvestTalent-AI</title>
+        <style>
+            * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+            body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f7fa; }}
+            .navbar {{
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                padding: 20px 40px;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            }}
+            .navbar h1 {{ font-size: 24px; margin-bottom: 5px; }}
+            .container {{ max-width: 800px; margin: 0 auto; padding: 30px 40px; }}
+            .form-card {{ background: white; padding: 25px; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); margin-bottom: 20px; }}
+            .form-card h3 {{ color: #333; margin-bottom: 15px; font-size: 16px; border-bottom: 2px solid #667eea; padding-bottom: 10px; }}
+            input[type="text"], input[type="number"], select {{ width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; margin-bottom: 15px; }}
+            input[type="text"]:focus, select:focus {{ outline: none; border-color: #667eea; }}
+            .btn-submit {{ background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 14px 30px; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; }}
+            .btn-submit:hover {{ transform: translateY(-2px); box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4); }}
+            .btn-cancel {{ color: #666; text-decoration: none; margin-left: 15px; }}
+        </style>
+    </head>
+    <body>
+        <div class="navbar">
+            <h1>➕ Create Job Posting</h1>
+        </div>
+        
+        <div class="container">
+            <form method="post">
+                <input type="hidden" name="csrfmiddlewaretoken" value="{request.META.get('CSRF_COOKIE', '')}">
+                
+                <div class="form-card">
+                    <h3>📋 Basic Information</h3>
+                    <input type="text" name="title" placeholder="Job Title *" required>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <input type="text" name="department" placeholder="Department">
+                        <select name="domain">
+                            <option value="General">General</option>
+                            <option value="Islamic Finance">Islamic Finance</option>
+                            <option value="Private Equity">Private Equity</option>
+                            <option value="Investment Banking">Investment Banking</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="color: #666; font-size: 14px;">Minimum Experience Required:</label>
+                        <input type="number" name="min_experience" value="0" min="0" style="width: 100px;"> years
+                    </div>
+                </div>
+                
+                <div class="form-card">
+                    <h3>🔴 Required Skills</h3>
+                    <div style="max-height: 250px; overflow-y: auto; border: 1px solid #eee; padding: 15px; border-radius: 8px;">
+                        {skill_html if skill_html else '<p style="color:#888;">No skills in database yet.</p>'}
+                    </div>
+                </div>
+                
+                <div class="form-card">
+                    <h3>⚙️ Scoring Weights</h3>
+                    <input type="hidden" name="education_weight" value="20">
+                    <input type="hidden" name="experience_weight" value="25">
+                    <input type="hidden" name="skills_weight" value="25">
+                    <input type="hidden" name="hard_skills_weight" value="15">
+                    <input type="hidden" name="soft_skills_weight" value="10">
+                    <input type="hidden" name="domain_weight" value="5">
+                    <p style="color: #666; font-size: 13px;">
+                        📚 Education: 20% | 💼 Experience: 25% | 🔧 Skills: 25% | 💪 Hard Skills: 15% | 🤝 Soft Skills: 10% | 🏢 Domain: 5%
+                    </p>
+                </div>
+                
+                <button type="submit" class="btn-submit">Create & Match Candidates</button>
+                <a href="/jobs/" class="btn-cancel">Cancel</a>
+            </form>
+        </div>
+    </body>
+    </html>'''
+    
+    return HttpResponse(html)
+
+
+def job_detail(request, job_id):
+    """Show job with matched candidates - styled to match dashboard."""
+    job = get_object_or_404(JobPosting.objects.select_related('role_profile'), pk=job_id)
+    apps = CandidateJobApplication.objects.filter(job_posting=job).select_related('candidate').order_by('-job_fit_score')
+    
+    # Skills badges
+    req_skills = pref_skills = ""
+    if job.role_profile:
+        req_skills = "".join([f'<span style="background:#fee2e2;color:#991b1b;padding:6px 12px;border-radius:15px;font-size:12px;margin:3px;display:inline-block;font-weight:500;">{s.canonical_name}</span>' for s in job.role_profile.required_skills.all()])
+        pref_skills = "".join([f'<span style="background:#d1fae5;color:#065f46;padding:6px 12px;border-radius:15px;font-size:12px;margin:3px;display:inline-block;font-weight:500;">{s.canonical_name}</span>' for s in job.role_profile.preferred_skills.all()])
+    
+    # Stats
+    total_candidates = apps.count()
+    avg_score = sum(a.job_fit_score for a in apps) / total_candidates if total_candidates > 0 else 0
+    top_score = apps.first().job_fit_score if apps.exists() else 0
+    qualified_count = sum(1 for a in apps if a.job_fit_score >= 50)
+    
+    # Candidate rows
+    rows = ""
+    for i, app in enumerate(apps, 1):
+        c = app.candidate
+        score = app.job_fit_score
+        
+        # Rank badge
+        if i == 1:
+            rank_style = "background: linear-gradient(135deg, #FFD700, #FFA500); color: white;"
+            rank_icon = "🥇"
+        elif i == 2:
+            rank_style = "background: linear-gradient(135deg, #C0C0C0, #A8A8A8); color: white;"
+            rank_icon = "🥈"
+        elif i == 3:
+            rank_style = "background: linear-gradient(135deg, #CD7F32, #B87333); color: white;"
+            rank_icon = "🥉"
+        else:
+            rank_style = "background: #e0e0e0; color: #666;"
+            rank_icon = f"#{i}"
+        
+        # Score badge
+        if score >= 70:
+            score_style = "background: linear-gradient(135deg, #28a745, #20c997); color: white;"
+            status = "Strong Match"
+        elif score >= 50:
+            score_style = "background: linear-gradient(135deg, #ffc107, #fd7e14); color: #333;"
+            status = "Qualified"
+        elif score >= 30:
+            score_style = "background: #fff3cd; color: #856404;"
+            status = "Review"
+        else:
+            score_style = "background: #f8d7da; color: #721c24;"
+            status = "Low Match"
+        
+        rows += f'''
+        <tr style="border-bottom: 1px solid #eee; transition: all 0.2s;" onmouseover="this.style.background='#f8f9ff';this.style.transform='scale(1.005)'" onmouseout="this.style.background='white';this.style.transform='scale(1)'">
+            <td style="padding: 18px 15px; text-align: center;">
+                <span style="{rank_style} display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; font-weight: bold; font-size: 14px;">{rank_icon}</span>
+            </td>
+            <td style="padding: 18px 15px;">
+                <a href="/candidate/{c.id}/" style="color: #667eea; font-weight: 600; text-decoration: none; font-size: 15px;">{c.name}</a>
+                <br><small style="color: #888;">{c.email}</small>
+            </td>
+            <td style="padding: 18px 15px; color: #555;">{c.current_position or "<span style='color:#ccc;'>Not specified</span>"}</td>
+            <td style="padding: 18px 15px; text-align: center;">
+                <span style="background: #e3f2fd; color: #1565c0; padding: 5px 12px; border-radius: 12px; font-weight: 600;">{c.years_experience or 0} yrs</span>
+            </td>
+            <td style="padding: 18px 15px; text-align: center;">
+                <div style="{score_style} padding: 8px 16px; border-radius: 20px; font-weight: bold; font-size: 16px; display: inline-block;">{score:.0f}%</div>
+                <div style="font-size: 11px; color: #888; margin-top: 4px;">{status}</div>
+            </td>
+            <td style="padding: 18px 15px; text-align: center;">
+                <a href="/candidate/{c.id}/" style="background: #667eea; color: white; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-size: 12px; font-weight: 500;">View Profile</a>
+            </td>
+        </tr>'''
+    
+    html = f'''
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>{job.title} - InvestTalent-AI</title>
+        <style>
+            * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+            body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f7fa; }}
+            .navbar {{
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                padding: 20px 40px;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            }}
+            .navbar h1 {{ font-size: 24px; margin-bottom: 5px; }}
+            .navbar p {{ opacity: 0.9; font-size: 14px; }}
+            .nav-links {{ margin-top: 15px; }}
+            .nav-links a {{ color: white; text-decoration: none; margin-right: 25px; opacity: 0.9; font-weight: 500; }}
+            .nav-links a:hover {{ opacity: 1; }}
+            .container {{ max-width: 1200px; margin: 0 auto; padding: 30px 40px; }}
+            .back-link {{ color: #667eea; text-decoration: none; font-weight: 500; display: inline-flex; align-items: center; gap: 5px; }}
+            .back-link:hover {{ text-decoration: underline; }}
+            .job-header {{ display: flex; justify-content: space-between; align-items: flex-start; margin: 20px 0 25px 0; }}
+            .job-title {{ font-size: 28px; color: #333; margin-bottom: 8px; }}
+            .job-meta {{ color: #666; font-size: 14px; }}
+            .job-meta span {{ margin-right: 20px; }}
+            .btn-match {{
+                background: linear-gradient(135deg, #28a745, #20c997);
+                color: white;
+                padding: 12px 24px;
+                border-radius: 8px;
+                text-decoration: none;
+                font-weight: 600;
+                box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+                transition: transform 0.2s;
+            }}
+            .btn-match:hover {{ transform: translateY(-2px); }}
+            .stats-row {{ display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 25px; }}
+            .stat-card {{
+                background: white;
+                padding: 20px;
+                border-radius: 12px;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+                text-align: center;
+                border-left: 4px solid #667eea;
+            }}
+            .stat-card .value {{ font-size: 32px; font-weight: bold; color: #333; }}
+            .stat-card .label {{ font-size: 12px; color: #888; text-transform: uppercase; margin-top: 5px; letter-spacing: 0.5px; }}
+            .skills-section {{ display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 25px; }}
+            .skills-card {{
+                background: white;
+                padding: 20px;
+                border-radius: 12px;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            }}
+            .skills-card h3 {{ font-size: 14px; color: #333; margin-bottom: 15px; display: flex; align-items: center; gap: 8px; }}
+            .skills-card h3 .count {{ background: #667eea; color: white; padding: 2px 8px; border-radius: 10px; font-size: 11px; }}
+            .table-card {{
+                background: white;
+                border-radius: 12px;
+                box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+                overflow: hidden;
+            }}
+            .table-header {{
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                padding: 20px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }}
+            .table-header h3 {{ font-size: 16px; }}
+            table {{ width: 100%; border-collapse: collapse; }}
+            thead {{ background: #f8f9fa; }}
+            th {{ padding: 15px; text-align: left; color: #666; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; border-bottom: 2px solid #e0e0e0; }}
+            th:nth-child(1), th:nth-child(4), th:nth-child(5), th:nth-child(6) {{ text-align: center; }}
+            tbody tr {{ background: white; cursor: pointer; }}
+        </style>
+    </head>
+    <body>
+        <div class="navbar">
+            <h1>💼 {job.title}</h1>
+            <p>{job.department or "No department"} • Created {job.created_at.strftime("%b %d, %Y") if job.created_at else "N/A"}</p>
+            <div class="nav-links">
+                <a href="/">📋 Candidates</a>
+                <a href="/jobs/">💼 Job Postings</a>
+                <a href="/analytics/">📊 Analytics</a>
+                <a href="/fairness/">⚖️ Fairness</a>
+            </div>
+        </div>
+        
+        <div class="container">
+            <a href="/jobs/" class="back-link">← Back to All Jobs</a>
+            
+            <div class="job-header">
+                <div>
+                    <h1 class="job-title">{job.title}</h1>
+                    <div class="job-meta">
+                        <span>🏢 {job.department or "No department"}</span>
+                        <span>📊 {job.role_profile.domain if job.role_profile else "General"}</span>
+                        <span>⏱️ Min {job.role_profile.min_experience if job.role_profile else 0} years experience</span>
+                    </div>
+                </div>
+                <a href="/jobs/{job.id}/match/" class="btn-match">🔄 Re-Match All Candidates</a>
+            </div>
+            
+            <div class="stats-row">
+                <div class="stat-card">
+                    <div class="value">{total_candidates}</div>
+                    <div class="label">Total Matched</div>
+                </div>
+                <div class="stat-card">
+                    <div class="value" style="color: #28a745;">{qualified_count}</div>
+                    <div class="label">Qualified (≥50%)</div>
+                </div>
+                <div class="stat-card">
+                    <div class="value">{avg_score:.0f}%</div>
+                    <div class="label">Average Score</div>
+                </div>
+                <div class="stat-card">
+                    <div class="value" style="color: #667eea;">{top_score:.0f}%</div>
+                    <div class="label">Top Score</div>
+                </div>
+            </div>
+            
+            <div class="skills-section">
+                <div class="skills-card">
+                    <h3>🔴 Required Skills <span class="count">{job.role_profile.required_skills.count() if job.role_profile else 0}</span></h3>
+                    <div>{req_skills or "<span style='color:#999;'>No required skills specified</span>"}</div>
+                </div>
+                <div class="skills-card">
+                    <h3>🟢 Preferred Skills <span class="count">{job.role_profile.preferred_skills.count() if job.role_profile else 0}</span></h3>
+                    <div>{pref_skills or "<span style='color:#999;'>No preferred skills specified</span>"}</div>
+                </div>
+            </div>
+            
+            <div class="table-card">
+                <div class="table-header">
+                    <h3>👥 Matched Candidates</h3>
+                    <span>{total_candidates} candidate{"s" if total_candidates != 1 else ""}</span>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>Candidate</th>
+                            <th>Current Position</th>
+                            <th>Experience</th>
+                            <th>Job Fit Score</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {rows if rows else '<tr><td colspan="6" style="padding: 50px; text-align: center; color: #888;"><h3>No candidates matched yet</h3><p style="margin-top:10px;">Click "Re-Match All Candidates" to run the matching algorithm</p></td></tr>'}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </body>
+    </html>'''
+    
+    return HttpResponse(html)
+
+
+def job_match(request, job_id):
+    """Match all candidates to this job."""
+    job = get_object_or_404(JobPosting.objects.select_related('role_profile'), pk=job_id)
+    
+    results = match_all_candidates(job)
+    for candidate, result in results:
+        save_application(candidate, job, result)
+    
+    return redirect('job_detail', job_id=job.pk)

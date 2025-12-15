@@ -61,7 +61,7 @@
         },
         {
           "id": "arch_006",
-          "name": "Autodesk Certified Professional – AutoCAD for Design",
+          "name": "Autodesk Certified Professional \u2013 AutoCAD for Design",
           "aliases": [
             "AutoCAD ACP Design"
           ],
@@ -71,7 +71,7 @@
         },
         {
           "id": "arch_007",
-          "name": "Autodesk Certified Professional – Revit for Architecture",
+          "name": "Autodesk Certified Professional \u2013 Revit for Architecture",
           "aliases": [
             "Revit Architecture ACP"
           ],
@@ -873,7 +873,7 @@
         },
         {
           "id": "ds_002",
-          "name": "AWS Certified Machine Learning – Specialty",
+          "name": "AWS Certified Machine Learning \u2013 Specialty",
           "aliases": [
             "AWS ML Specialty",
             "AWS MLS"
@@ -1398,7 +1398,7 @@
         },
         {
           "id": "eng_016",
-          "name": "Autodesk Certified Professional – AutoCAD",
+          "name": "Autodesk Certified Professional \u2013 AutoCAD",
           "aliases": [
             "AutoCAD ACP"
           ],
@@ -1408,7 +1408,7 @@
         },
         {
           "id": "eng_017",
-          "name": "Autodesk Certified Professional – Revit",
+          "name": "Autodesk Certified Professional \u2013 Revit",
           "aliases": [
             "Revit ACP"
           ],
@@ -1422,7 +1422,7 @@
           "aliases": [
             "CSWP"
           ],
-          "issuer": "Dassault Systèmes",
+          "issuer": "Dassault Syst\u00e8mes",
           "level": "Intermediate",
           "region": "Global"
         },
@@ -1432,7 +1432,7 @@
           "aliases": [
             "CSWE"
           ],
-          "issuer": "Dassault Systèmes",
+          "issuer": "Dassault Syst\u00e8mes",
           "level": "Expert",
           "region": "Global"
         },
@@ -1669,7 +1669,7 @@
         },
         {
           "id": "fin_018",
-          "name": "AAOIFI Certified Shari’ah Advisor & Auditor",
+          "name": "AAOIFI Certified Shari\u2019ah Advisor & Auditor",
           "aliases": [
             "AAOIFI CSAA",
             "CSAA"
@@ -3103,7 +3103,7 @@
       "certifications": [
         {
           "id": "soft_001",
-          "name": "Oracle Certified Professional – Java Programmer",
+          "name": "Oracle Certified Professional \u2013 Java Programmer",
           "aliases": [
             "OCPJP",
             "Oracle Java Certification"
@@ -3114,7 +3114,7 @@
         },
         {
           "id": "soft_002",
-          "name": "Oracle Certified Associate – Java Programmer",
+          "name": "Oracle Certified Associate \u2013 Java Programmer",
           "aliases": [
             "OCAJP"
           ],
@@ -3134,7 +3134,7 @@
         },
         {
           "id": "soft_004",
-          "name": "AWS Certified Developer – Associate",
+          "name": "AWS Certified Developer \u2013 Associate",
           "aliases": [
             "AWS CDA"
           ],
@@ -3260,6 +3260,107 @@
           ],
           "issuer": "IBM",
           "level": "Foundational",
+          "region": "Global"
+        }
+      ]
+    },
+    {
+      "name": "Huawei Certifications",
+      "certifications": [
+        {
+          "id": "huawei_001",
+          "name": "Huawei Certified ICT Professional - Security",
+          "aliases": [
+            "HCIP-Security",
+            "HCIP Security",
+            "H12-725",
+            "HCIP"
+          ],
+          "issuer": "Huawei",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "huawei_002",
+          "name": "Huawei Certified ICT Associate - Security",
+          "aliases": [
+            "HCIA-Security",
+            "HCIA Security",
+            "H12-711",
+            "HCIA"
+          ],
+          "issuer": "Huawei",
+          "level": "Intermediate",
+          "region": "Global"
+        },
+        {
+          "id": "huawei_003",
+          "name": "Huawei Certified Network Associate - Routing and Switching",
+          "aliases": [
+            "HCNA",
+            "HCNA-RS",
+            "H12-211",
+            "HCNA Routing Switching"
+          ],
+          "issuer": "Huawei",
+          "level": "Foundational",
+          "region": "Global"
+        },
+        {
+          "id": "huawei_004",
+          "name": "Huawei Certified Academy Instructor",
+          "aliases": [
+            "HCAI",
+            "Huawei Academy Instructor"
+          ],
+          "issuer": "Huawei",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "huawei_005",
+          "name": "Huawei Certified ICT Expert - Routing and Switching",
+          "aliases": [
+            "HCIE-RS",
+            "HCIE",
+            "H12-261"
+          ],
+          "issuer": "Huawei",
+          "level": "Expert",
+          "region": "Global"
+        },
+        {
+          "id": "huawei_006",
+          "name": "Huawei Certified ICT Professional - Routing and Switching",
+          "aliases": [
+            "HCIP-RS",
+            "HCIP Routing",
+            "H12-221"
+          ],
+          "issuer": "Huawei",
+          "level": "Professional",
+          "region": "Global"
+        },
+        {
+          "id": "huawei_007",
+          "name": "Huawei Certified ICT Associate - Cloud Computing",
+          "aliases": [
+            "HCIA-Cloud",
+            "H13-511"
+          ],
+          "issuer": "Huawei",
+          "level": "Intermediate",
+          "region": "Global"
+        },
+        {
+          "id": "huawei_008",
+          "name": "Huawei Certified ICT Associate - AI",
+          "aliases": [
+            "HCIA-AI",
+            "H13-311"
+          ],
+          "issuer": "Huawei",
+          "level": "Intermediate",
           "region": "Global"
         }
       ]

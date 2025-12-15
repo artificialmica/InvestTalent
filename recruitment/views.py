@@ -4,7 +4,7 @@ from django.db import models
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.http import require_http_methods
 from django.contrib.admin.views.decorators import staff_member_required
-from .models import Candidate, Resume, JobPosting, CandidateJobApplication
+from .models import Candidate, Resume, JobPosting, CandidateJobApplication, Score
 from .scoring import analyze_resume
 from .fairness import fairness_analyzer
 from .analytics import analytics_engine
@@ -191,35 +191,6 @@ def upload_resume(request):
                             '⚠️ Unable to extract email from resume. Please update manually in the admin panel.'
                         )
                     
-                    # # Check ATS readability
-                    # if candidate.ats_readability_score < 70:
-                    #     messages.warning(
-                    #         request,
-                    #         f'⚠️ ATS Readability: {candidate.ats_readability_score}/100 - Resume may have formatting issues'
-                    #     )
-                    #     if candidate.ats_issues:
-                    #         messages.info(
-                    #             request,
-                    #             f"📋 Issues: {', '.join(candidate.ats_issues[:3])}"
-                    #         )
-                    
-                    # # If job posting selected, create application
-                    # if job_posting:
-                    #     CandidateJobApplication.objects.create(
-                    #         candidate=candidate,
-                    #         job_posting=job_posting,
-                    #         job_fit_score=scores['total_score']
-                    #     )
-                    #     messages.success(
-                    #         request,
-                    #         f'✅ Resume analyzed! Score: {scores["total_score"]}/100 for {job_posting.title}'
-                    #     )
-                    # else:
-                    #     messages.success(
-                    #         request,
-                    #         f'✅ Resume analyzed! Overall Score: {scores["total_score"]}/100'
-                    #     )
-                    
                     # Show extraction summary
                     if scores.get('contact_info'):
                         contact = scores['contact_info']
@@ -308,24 +279,58 @@ def candidate_detail(request, pk):
 
 
 def dashboard(request):
-    """Main dashboard view"""
-    # Get all candidates with scores
-    candidates = Candidate.objects.filter(score__isnull=False).select_related('score').order_by('-score__total_score')
+    """Main dashboard view with filtering and comparison support"""
+    # Get filter parameters
+    search_query = request.GET.get('search', '').strip()
+    status_filter = request.GET.get('status', '')
+    min_score = request.GET.get('min_score', '')
+    
+    # Base queryset
+    candidates = Candidate.objects.filter(score__isnull=False).select_related('score')
+    
+    # Apply filters
+    if search_query:
+        candidates = candidates.filter(
+            models.Q(name__icontains=search_query) | 
+            models.Q(email__icontains=search_query)
+        )
+    
+    if status_filter:
+        candidates = candidates.filter(status=status_filter)
+    
+    if min_score:
+        try:
+            min_score_val = float(min_score)
+            candidates = candidates.filter(score__total_score__gte=min_score_val)
+        except ValueError:
+            pass
+    
+    # Order by score
+    candidates = candidates.order_by('-score__total_score')
     
     # Get statistics
     total_candidates = Candidate.objects.count()
+    shortlisted_count = Candidate.objects.filter(status='shortlisted').count()
     total_hired = Candidate.objects.filter(status='hired').count()
     total_rejected = Candidate.objects.filter(status='rejected').count()
     avg_score = Candidate.objects.filter(score__isnull=False).aggregate(
         avg=models.Avg('score__total_score')
     )['avg'] or 0
     
+    # Status choices for filter dropdown
+    status_choices = Candidate.STATUS_CHOICES
+    
     context = {
         'candidates': candidates[:50],  # Top 50
         'total_candidates': total_candidates,
+        'shortlisted_count': shortlisted_count,
         'total_hired': total_hired,
         'total_rejected': total_rejected,
-        'avg_score': round(avg_score, 2),
+        'avg_score': round(avg_score, 1),
+        'search_query': search_query,
+        'status_filter': status_filter,
+        'min_score': min_score,
+        'status_choices': status_choices,
     }
     
     return render(request, 'recruitment/dashboard.html', context)
@@ -629,16 +634,27 @@ def compare_candidates(request):
         messages.error(request, 'Please select at least 2 candidates to compare')
         return redirect('dashboard')
     
-    candidates = Candidate.objects.filter(id__in=candidate_ids).select_related('score')
+    if len(candidate_ids) > 4:
+        messages.warning(request, 'Showing first 4 candidates for comparison')
+        candidate_ids = candidate_ids[:4]
+    
+    # Get candidates ordered by score (highest first)
+    candidates = Candidate.objects.filter(id__in=candidate_ids).select_related('score').order_by('-score__total_score')
     
     # Build comparison data
     comparison = []
     for candidate in candidates:
+        # Get skills - handle both old and new model structures
+        try:
+            skills_list = list(candidate.extracted_skills.filter(is_validated=True)[:15])
+        except:
+            skills_list = list(candidate.extracted_skills.all()[:15])
+        
         data = {
             'candidate': candidate,
             'education': list(candidate.education.all()),
             'experience': list(candidate.experience.all()),
-            'skills': list(candidate.extracted_skills.all()),
+            'skills': skills_list,
             'years_experience': candidate.years_experience,
         }
         comparison.append(data)
@@ -688,3 +704,95 @@ def export_candidates_csv(request):
         ])
     
     return response
+
+def dashboard(request):
+    """Main dashboard view with weight slider support"""
+    from django.db.models import Avg
+    
+    # Check if re-scoring requested
+    action = request.GET.get('action')
+    if action == 'rescore':
+        # Get custom weights from request
+        edu_weight = float(request.GET.get('education_weight', 0.25))
+        exp_weight = float(request.GET.get('experience_weight', 0.30))
+        skill_weight = float(request.GET.get('skills_weight', 0.25))
+        if_weight = float(request.GET.get('islamic_finance_weight', 0.20))
+        
+        # Re-score all candidates - ACTUALLY call analyze_resume to re-extract skills!
+        candidates_to_rescore = Candidate.objects.filter(score__isnull=False)
+        rescored_count = 0
+        
+        for candidate in candidates_to_rescore:
+            try:
+                # ACTUALLY RE-ANALYZE the resume (this re-extracts skills with new filters!)
+                if hasattr(candidate, 'resume') and candidate.resume.parsed_text:
+                    print(f"\n{'='*60}")
+                    print(f"RE-SCORING: {candidate.name}")
+                    print(f"{'='*60}")
+                    analyze_resume(candidate, job_posting=None, use_ml=True)
+                    rescored_count += 1
+                else:
+                    print(f"Skipping {candidate.name} - no resume text")
+            except Exception as e:
+                print(f"Error rescoring {candidate.name}: {e}")
+                import traceback
+                traceback.print_exc()
+        
+        # Update ranks after all rescoring is done
+        all_scores = Score.objects.all().order_by('-total_score')
+        for i, score in enumerate(all_scores, 1):
+            score.rank = i
+            score.save()
+        
+        messages.success(request, f'✅ Re-scored {rescored_count} candidates! Skills re-extracted with domain filtering.')
+    
+    # Get filter parameters
+    search_query = request.GET.get('search', '')
+    status_filter = request.GET.get('status', '')
+    min_score = request.GET.get('min_score', '')
+    
+    # Base queryset
+    candidates = Candidate.objects.filter(score__isnull=False).select_related('score')
+    
+    # Apply filters
+    if search_query:
+        candidates = candidates.filter(
+            models.Q(name__icontains=search_query) | 
+            models.Q(email__icontains=search_query)
+        )
+    
+    if status_filter:
+        candidates = candidates.filter(status=status_filter)
+    
+    if min_score:
+        try:
+            min_score_val = float(min_score)
+            candidates = candidates.filter(score__total_score__gte=min_score_val)
+        except ValueError:
+            pass
+    
+    # Order by score
+    candidates = candidates.order_by('-score__total_score')
+    
+    # Get statistics
+    total_candidates = Candidate.objects.count()
+    shortlisted_count = Candidate.objects.filter(status='shortlisted').count()
+    avg_score = Candidate.objects.filter(score__isnull=False).aggregate(
+        avg=Avg('score__total_score')
+    )['avg'] or 0
+    
+    # Status choices for filter dropdown
+    status_choices = Candidate._meta.get_field('status').choices
+    
+    context = {
+        'candidates': candidates[:50],  # Top 50
+        'total_candidates': total_candidates,
+        'shortlisted_count': shortlisted_count,
+        'avg_score': round(avg_score, 1),
+        'search_query': search_query,
+        'status_filter': status_filter,
+        'min_score': min_score,
+        'status_choices': status_choices,
+    }
+    
+    return render(request, 'recruitment/dashboard.html', context)

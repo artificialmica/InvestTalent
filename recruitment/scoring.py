@@ -1,22 +1,26 @@
 """
-AI-Powered Resume Scoring Engine - COMPREHENSIVE FIX v2
-========================================================
-FIXES FROM 4-CV TESTING:
-1. Experience: Handle MM/YYYY format, exclude company descriptions ("60+ years")
-2. Education: Handle M.Sc., B.Sc. Hons., Bachelor's Degree in X formats
-3. Email: Better extraction patterns
-4. Domain Filter: Added health care, social service, demand excellence, roof window
+AI-Powered Resume Scoring Engine - HYBRID PRODUCTION VERSION
+=============================================================
+COMBINES:
+- OLD CODE: Strong preprocessing (normalize_cv_text, normalize_dates_in_text)
+- OLD CODE: 0.5 year merge tolerance
+- OLD CODE: CV-type-aware section extraction
+- NEW CODE: int() flooring (not rounding)
+- NEW CODE: Academic service exclusion (editors, committees, awards)
+- NEW CODE: Education line exclusion
+- NEW CODE: Course vs teaching distinction
 
-TESTED ON:
-- CV #1: Dr. Faheem (Academic) - 19 years, PhD ✓
-- CV #2: Yaman (Industry) - Should be ~4 years, Bachelor ✓
-- CV #3: Neha (Finance) - Should be ~6 years, M.Sc. ✓
-- CV #4: Dr. Shomona (Academic) - Should be ~18 years, PhD ✓
+EXPECTED RESULTS:
+- Dr. Faheem: 19 years ✓
+- Neha Ali: ~6-7 years ✓
+- Dr. Shomona: ~14-18 years ✓
+- Yaman: ~4 years ✓
 """
 
 import spacy
 import re
 import sqlite3
+import json
 from datetime import datetime
 from pathlib import Path
 from django.db import transaction
@@ -54,13 +58,18 @@ except:
 # ============================================================
 BASE_DIR = Path(__file__).resolve().parent
 ESCO_DB_PATH = BASE_DIR / "data" / "esco.db"
+CERTIFICATIONS_PATH = BASE_DIR / "data" / "certifications.json"
 
 
 # ============================================================
-# TEXT NORMALIZATION - Fix PDF artifacts and HTML entities
+# TEXT NORMALIZATION - FROM OLD CODE (CRITICAL)
+# This is what makes experience extraction work properly
 # ============================================================
 def normalize_cv_text(text):
-    """Normalize CV text to fix common PDF parsing issues and HTML entities."""
+    """
+    Normalize CV text to fix common PDF parsing issues and HTML entities.
+    THIS MUST RUN BEFORE ANY EXTRACTION.
+    """
     # Decode HTML entities
     text = text.replace('&#x27;', "'")
     text = text.replace('&amp;', '&')
@@ -73,14 +82,11 @@ def normalize_cv_text(text):
     text = re.sub(r'([a-zA-Z])(\d{2}/\d{4})', r'\1 \2', text)
     text = re.sub(r'([a-zA-Z])(\d{4}\s*[–—-])', r'\1 \2', text)
     
-    # Fix broken words from PDF (e.g., "com prises" -> "comprises")
-    text = re.sub(r'(\w) (\w)(?=\s|$|\n)', r'\1\2', text)
+    # Fix "PresentManama" -> "Present Manama"
+    text = re.sub(r'(present|current)([A-Z])', r'\1 \2', text, flags=re.IGNORECASE)
     
     # Join lines ending with "from"
     text = re.sub(r'(from)\s*\n\s*', r'\1 ', text, flags=re.IGNORECASE)
-    
-    # Join lines without punctuation
-    text = re.sub(r'(?<![.!?:])\n(?=[A-Z][a-z])', ' ', text)
     
     # Fix hyphenated breaks
     text = re.sub(r'-\s*\n\s*', '', text)
@@ -98,21 +104,21 @@ def normalize_cv_text(text):
 def normalize_dates_in_text(text):
     """
     Normalize all date formats to standard MM/YYYY format.
-    This simplifies downstream date extraction.
+    THIS IS CRITICAL - without this, regex can't reliably match dates.
     
     Converts:
     - "2020 – 2023" -> "01/2020 – 12/2023"
     - "2020 - present" -> "01/2020 – present"
     - "Nov 2020" -> "11/2020"
+    - "November 2020" -> "11/2020"
     """
     # First, standardize dash types
     text = re.sub(r'\s*[-–—]\s*', ' – ', text)
     
     # Convert "YYYY – YYYY" to "01/YYYY – 12/YYYY" (but not if already has month)
-    # Negative lookbehind to avoid matching dates that already have MM/
     def convert_yyyy_range(match):
         start_year = match.group(1)
-        end_part = match.group(2) or match.group(3)  # Either year or present/current
+        end_part = match.group(2) or match.group(3)
         
         if end_part.lower() in ['present', 'current', 'now', 'ongoing']:
             return f"01/{start_year} – {end_part}"
@@ -143,7 +149,6 @@ def normalize_dates_in_text(text):
         'dec': '12', 'december': '12',
     }
     
-    # Convert "Nov 2020" or "November 2020" to "11/2020"
     def convert_month_name(match):
         month_name = match.group(1).lower()
         year = match.group(2)
@@ -161,51 +166,92 @@ def normalize_dates_in_text(text):
 
 
 # ============================================================
-# DOMAIN FILTER - EXPANDED based on 4-CV testing
+# CERTIFICATION DETECTION
+# ============================================================
+def load_certifications():
+    """Load certification patterns from JSON file"""
+    if CERTIFICATIONS_PATH.exists():
+        try:
+            with open(CERTIFICATIONS_PATH, 'r') as f:
+                return json.load(f)
+        except:
+            pass
+    return {}
+
+CERTIFICATIONS_DB = load_certifications()
+
+
+def detect_certifications(text):
+    """Detect professional certifications in CV text"""
+    found = []
+    text_lower = text.lower()
+    
+    for category, certs in CERTIFICATIONS_DB.items():
+        for cert in certs:
+            # Handle both string format and dict format
+            if isinstance(cert, dict):
+                cert_name = cert.get('name', cert.get('certification', ''))
+            else:
+                cert_name = cert
+            
+            if not cert_name:
+                continue
+                
+            cert_lower = cert_name.lower()
+            if cert_lower in text_lower:
+                found.append({
+                    'name': cert_name,
+                    'category': category
+                })
+    
+    return found
+
+
+# ============================================================
+# DOMAIN FILTER - EXPANDED (FROM NEW CODE)
 # ============================================================
 IRRELEVANT_SKILL_PATTERNS = [
     # Food/culinary
     r'food', r'culinary', r'cook', r'bake', r'restaurant', r'cuisine',
-    r'pastry', r'chef', r'kitchen', r'catering',
-    r'cacao', r'roasting',
+    r'pastry', r'chef', r'kitchen', r'catering', r'cacao', r'roasting',
     # Retail/sales
     r'store owner', r'retail', r'merchandise', r'shopping',
     # Construction/manual
     r'assemble windows', r'carpentry', r'plumbing', r'masonry',
     r'sill pan', r'install sill', r'roof window', r'install roof',
+    r'remove glass from windows',
     # Agriculture
-    r'farming', r'livestock', r'crop', r'harvest',
-    r'fishery', r'fishing',
+    r'farming', r'livestock', r'crop', r'harvest', r'fishery', r'fishing',
     r'mining emergencies', r'mining',
-    # Healthcare (unless relevant)
-    r'nursing', r'patient care', r'bedside',
-    r'health care', r'changing situations in health',
-    r'allergic', r'cosmetics reactions',
-    r'patients\' reaction', r'therapy',  # Added
-    # Social service (not tech relevant)
+    # Healthcare/Medical (unless healthcare field)
+    r'nursing', r'patient care', r'bedside', r'health care',
+    r'changing situations in health', r'allergic', r'cosmetics reactions',
+    r'patients\' reaction', r'therapy', r'anaesthesia', r'anesthesia',
+    r'adverse reactions', r'medical emergency', r'clinical',
+    # Social service
     r'social service', r'social work',
-    # Generic/irrelevant ESCO
+    # Generic ESCO noise
     r'pursue excellence', r'demand excellence', r'excellence from performer',
-    r'strive for excellence',
-    r'writing industry',
-    r'use word processing',
-    r'use spreadsheet',
+    r'strive for excellence', r'writing industry',
+    r'use word processing', r'use spreadsheet',
     # Dangerous/unrelated
-    r'explosives',
-    r'nuclear reactor',  # Added
-    # Manufacturing (unless relevant)
+    r'explosives', r'nuclear reactor',
+    # Manufacturing
     r'lean manufacturing',
     # Time-critical (false positive from "react")
-    r'time-critical', r'react to events',
+    r'time-critical', r'react to events', r'operate photoreactors',
     # Guest/hospitality
     r'guest support', r'manage guest',
-    # Industrial/chemical (false positive)
+    # Industrial/chemical
     r'sulphur', r'sulfur', r'recovery processes',
-    # Sports (false positive)
+    # Sports
     r'physical ability', r'highest level in sport', r'perform at the highest',
-    # Music/performance (false positive)
+    # Music/performance
     r'musical performance', r'musical excellence',
+    # Other noise
+    r'develop solutions to information issues',
 ]
+
 
 def is_relevant_skill(skill_name, job_domain='technology'):
     """Filter out irrelevant ESCO matches"""
@@ -217,7 +263,216 @@ def is_relevant_skill(skill_name, job_domain='technology'):
 
 
 # ============================================================
-# SKILL PATTERNS - For symbolic/edge cases only
+# FIELD-BASED SKILL FILTERING (FROM NEW CODE)
+# ============================================================
+FIELD_ALLOWED_SKILLS = {
+    'technology': [
+        # Programming Languages
+        'python', 'java', 'javascript', 'c++', 'c#', 'php', 'ruby', 'swift',
+        'kotlin', 'scala', 'rust', 'go', 'r', 'typescript', 'perl', 'bash',
+        # Web
+        'html', 'css', 'react', 'angular', 'vue', 'node', 'django', 'flask',
+        'fastapi', 'spring', 'express', 'graphql', 'rest api', 'nextjs',
+        # Databases
+        'sql', 'mysql', 'postgresql', 'mongodb', 'redis', 'elasticsearch',
+        'oracle', 'sqlite', 'firebase', 'dynamodb', 'cassandra',
+        'database', 'database management', 'database management systems',
+        # Cloud & DevOps
+        'aws', 'azure', 'gcp', 'docker', 'kubernetes', 'terraform', 'jenkins',
+        'ci/cd', 'git', 'github', 'gitlab', 'ansible', 'puppet', 'chef',
+        # Data Science & ML
+        'machine learning', 'deep learning', 'neural network', 'tensorflow',
+        'pytorch', 'pandas', 'numpy', 'scikit-learn', 'data analysis',
+        'data science', 'artificial intelligence', 'nlp', 'computer vision',
+        'statistics', 'big data', 'spark', 'hadoop', 'tableau', 'power bi',
+        'artificial neural network',
+        # Security
+        'cybersecurity', 'cyber security', 'penetration testing', 'ethical hacking',
+        'firewall', 'encryption', 'vulnerability', 'siem', 'soc', 'incident response',
+        # Networking
+        'networking', 'tcp/ip', 'dns', 'vpn', 'cisco', 'huawei', 'routing',
+        'switching', 'lan', 'wan', 'sdwan', 'load balancing',
+        # Tools
+        'linux', 'windows server', 'vmware', 'jira', 'confluence', 'slack',
+        'matlab', 'simulink', 'autocad', 'excel', 'vba',
+        # Cross-domain
+        'risk management', 'data management', 'information management',
+        'business analysis', 'requirements analysis',
+        # Soft skills
+        'project management', 'leadership', 'communication', 'teamwork',
+        'problem solving', 'agile', 'scrum', 'kanban', 'lead others',
+    ],
+    'academic': [
+        # ACADEMIC includes ALL tech skills plus research-specific
+        # Programming Languages
+        'python', 'java', 'javascript', 'c++', 'c#', 'php', 'ruby', 'swift',
+        'kotlin', 'scala', 'rust', 'go', 'r', 'typescript', 'perl', 'bash',
+        'matlab', 'simulink', 'spss', 'stata', 'sas',
+        # Web
+        'html', 'css', 'react', 'angular', 'vue', 'node', 'django', 'flask',
+        # Databases
+        'sql', 'mysql', 'postgresql', 'mongodb', 'redis', 'elasticsearch',
+        'oracle', 'sqlite', 'firebase', 'database', 'database management',
+        # Cloud & DevOps
+        'aws', 'azure', 'gcp', 'docker', 'kubernetes', 'git', 'github',
+        # Data Science & ML (CRITICAL for academics)
+        'machine learning', 'deep learning', 'neural network', 'tensorflow',
+        'pytorch', 'pandas', 'numpy', 'scikit-learn', 'data analysis',
+        'data science', 'artificial intelligence', 'nlp', 'computer vision',
+        'statistics', 'big data', 'spark', 'hadoop', 'tableau', 'power bi',
+        'artificial neural network', 'image processing', 'signal processing',
+        # Security
+        'cybersecurity', 'cyber security', 'penetration testing', 'ethical hacking',
+        'firewall', 'encryption', 'networking', 'tcp/ip',
+        # Research tools
+        'latex', 'overleaf', 'mendeley', 'zotero', 'endnote',
+        # Engineering tools
+        'autocad', 'solidworks', 'ansys', 'labview',
+        # Academic soft skills
+        'research', 'teaching', 'mentoring', 'supervision',
+        'project management', 'leadership', 'communication', 'teamwork',
+        'problem solving', 'presentation', 'writing',
+    ],
+    'finance': [
+        'financial modeling', 'financial analysis', 'valuation', 'accounting',
+        'auditing', 'budgeting', 'forecasting', 'treasury', 'cash management',
+        'portfolio management', 'asset management', 'wealth management',
+        'investment analysis', 'equity research', 'fixed income', 'derivatives',
+        'risk management', 'credit analysis', 'trading', 'bloomberg',
+        'excel', 'vba', 'python', 'sql', 'power bi', 'tableau', 'sap',
+        'database', 'database management', 'data analysis', 'data management',
+        'regulatory compliance', 'aml', 'kyc', 'basel', 'ifrs', 'gaap',
+        'leadership', 'lead others', 'team lead', 'management',
+        'project management', 'communication', 'teamwork', 'problem solving',
+    ],
+    'islamic_finance': [
+        'sukuk', 'mudarabah', 'musharakah', 'murabaha', 'ijara', 'takaful',
+        'sharia', 'islamic finance', 'islamic banking', 'sharia compliance',
+        'islamic investment', 'halal investment', 'riba', 'gharar',
+        'financial modeling', 'financial analysis', 'valuation', 'accounting',
+        'auditing', 'portfolio management', 'asset management', 'risk management',
+        'bloomberg', 'excel', 'vba', 'python', 'sql',
+        'project management', 'leadership', 'communication', 'teamwork',
+    ],
+    'engineering': [
+        'autocad', 'solidworks', 'catia', 'matlab', 'simulink', 'ansys',
+        'plc', 'scada', 'embedded systems', 'microcontroller', 'arduino',
+        'fpga', 'vhdl', 'verilog', 'pcb design', 'circuit design',
+        'mechanical design', 'structural analysis', 'fea', 'cfd',
+        'project management', 'leadership', 'communication', 'teamwork',
+        # Engineering includes programming now
+        'python', 'java', 'c++', 'c#', 'php', 'javascript', 'r',
+        'sql', 'mysql', 'postgresql', 'machine learning', 'deep learning',
+        'tcp/ip', 'cisco', 'routing', 'cybersecurity', 'networking',
+    ],
+    'healthcare': [
+        'patient care', 'diagnosis', 'treatment', 'clinical research',
+        'medical records', 'ehr', 'emr', 'hipaa', 'pharmacy', 'nursing',
+        'medical imaging', 'radiology', 'laboratory', 'biostatistics',
+        'epidemiology', 'public health', 'clinical trials',
+        'excel', 'spss', 'sas', 'r', 'python', 'sql',
+        'project management', 'leadership', 'communication', 'teamwork',
+    ],
+    'general': [
+        'excel', 'word', 'powerpoint', 'outlook', 'teams',
+        'project management', 'leadership', 'communication', 'teamwork',
+        'problem solving', 'time management', 'organization',
+    ],
+}
+
+
+def detect_candidate_field(text, education_data=None):
+    """Detect what field/domain the candidate is in"""
+    text_lower = text.lower()
+    
+    field_keywords = {
+        'technology': ['software', 'developer', 'programming', 'database', 'cloud', 'devops',
+                      'machine learning', 'ai', 'data science', 'cybersecurity', 'network'],
+        'finance': ['finance', 'accounting', 'investment', 'banking', 'trading', 'portfolio',
+                   'financial analysis', 'auditing', 'treasury'],
+        'islamic_finance': ['islamic finance', 'sukuk', 'takaful', 'sharia', 'mudarabah',
+                           'islamic banking', 'halal'],
+        'healthcare': ['medical', 'healthcare', 'hospital', 'clinical', 'patient', 'nursing'],
+        'academic': ['professor', 'lecturer', 'research', 'university', 'publications', 'phd'],
+        'engineering': ['engineer', 'mechanical', 'electrical', 'civil', 'chemical', 'structural'],
+    }
+    
+    scores = {field: 0 for field in field_keywords}
+    
+    for field, keywords in field_keywords.items():
+        for kw in keywords:
+            count = len(re.findall(r'\b' + re.escape(kw) + r'\b', text_lower))
+            scores[field] += count * 2
+    
+    # Education bonus
+    if education_data:
+        edu_field = ' '.join([d.get('field_of_study', '') or '' for d in education_data.get('degrees', [])]).lower()
+        
+        if any(x in edu_field for x in ['computer', 'software', 'information', 'technology', 'cyber']):
+            scores['technology'] += 5
+        if any(x in edu_field for x in ['finance', 'accounting', 'business', 'economics']):
+            scores['finance'] += 5
+        if any(x in edu_field for x in ['islamic', 'sharia']):
+            scores['islamic_finance'] += 5
+        if any(x in edu_field for x in ['engineering', 'electronics', 'communications']):
+            scores['engineering'] += 5
+            scores['technology'] += 3
+    
+    max_field = max(scores, key=scores.get)
+    
+    if scores[max_field] < 3:
+        return 'general'
+    
+    return max_field
+
+
+def is_skill_allowed_for_field(skill_name, candidate_field):
+    """Check if a skill is allowed for the candidate's detected field"""
+    skill_lower = skill_name.lower().strip()
+    
+    if len(skill_lower) <= 2:
+        short_allowed = ['r', 'c', 'c#', 'go', 'ai', 'ml', 'js', 'ui', 'ux', 'qa', 'it', 'hr', 'bi']
+        if skill_lower not in short_allowed:
+            return False
+    
+    allowed = FIELD_ALLOWED_SKILLS.get(candidate_field, FIELD_ALLOWED_SKILLS['general'])
+    
+    skill_normalized = re.sub(r's$', '', skill_lower)
+    
+    for allowed_skill in allowed:
+        allowed_lower = allowed_skill.lower()
+        allowed_normalized = re.sub(r's$', '', allowed_lower)
+        
+        if skill_lower == allowed_lower or skill_normalized == allowed_normalized:
+            return True
+        
+        pattern = r'\b' + re.escape(allowed_lower) + r's?\b'
+        if re.search(pattern, skill_lower):
+            return True
+        
+        pattern_reverse = r'\b' + re.escape(skill_normalized) + r's?\b'
+        if re.search(pattern_reverse, allowed_lower):
+            return True
+        
+        skill_words = set(skill_lower.split())
+        allowed_words = set(allowed_lower.split())
+        overlap = skill_words & allowed_words
+        significant = [w for w in overlap if len(w) > 3]
+        if len(significant) >= 2:
+            return True
+    
+    general_skills = ['communication', 'leadership', 'teamwork', 'problem solving',
+                      'project management', 'excel', 'presentation']
+    for gs in general_skills:
+        pattern = r'\b' + re.escape(gs) + r's?\b'
+        if re.search(pattern, skill_lower):
+            return True
+    
+    return False
+
+
+# ============================================================
+# SKILL PATTERNS
 # ============================================================
 RECALL_PATTERNS = {
     # Programming Languages
@@ -242,12 +497,11 @@ RECALL_PATTERNS = {
     'mongodb': r'\bmongodb\b',
     'sqlite': r'\bsqlite\b',
     'firebase': r'\bfirebase\b',
-    'supabase': r'\bsupabase\b',
     
     # Web Technologies
     'html': r'\bhtml\d?\b',
     'css': r'\bcss\d?\b',
-    'react': r'\breact(?:\.?js|[\s\-]native)?\b',
+    'react': r'\breact(?:\.?js|[\s\-]native)?\b(?!\s+calm)',  # Exclude "react calmly"
     'angular': r'\bangular\b',
     'vue': r'\bvue\.?js?\b',
     'node': r'\bnode\.?js\b',
@@ -268,6 +522,7 @@ RECALL_PATTERNS = {
     'computer vision': r'\bcomputer\s+vision',
     'tensorflow': r'\btensorflow\b',
     'pytorch': r'\bpytorch\b',
+    'statistics': r'\bstatistics\b|\bstatistical\b',
     
     # Tools & Platforms
     'excel': r'\bexcel\b(?!\s*lent)',
@@ -283,15 +538,14 @@ RECALL_PATTERNS = {
     'azure': r'\bazure\b',
     'gcp': r'\bgcp\b|google\s+cloud',
     'linux': r'\blinux\b',
-    'windows': r'\bwindows\b(?!\s+of)',
     
     # Networking & Security
     'tcp/ip': r'\btcp\s*/?\s*ip\b',
     'networking': r'\bnetwork(?:ing)?\b',
     'cybersecurity': r'\bcyber\s*security\b',
+    'cyber security': r'\bcyber\s+security\b',
     'penetration testing': r'\bpenetration\s+test',
     'cisco': r'\bcisco\b',
-    'huawei': r'\bhuawei\b',
     
     # Finance
     'financial modeling': r'\bfinancial\s+model',
@@ -311,18 +565,16 @@ RECALL_PATTERNS = {
     'islamic finance': r'\bislamic\s+finance\b',
     'islamic banking': r'\bislamic\s+bank',
     
-    # Soft Skills (limited)
+    # Soft Skills
     'project management': r'\bproject\s+management\b',
     'leadership': r'\bleadership\b',
+    'lead others': r'\blead\s+others\b|\bleading\s+others\b',
 }
 
-ISLAMIC_FINANCE_CERTS = [
-    'cife', 'chartered islamic finance expert',
-    'aaoifi', 'cibafi', 'islamic finance qualification',
-    'cifp', 'csaa', 'certified islamic banker'
-]
 
-
+# ============================================================
+# ESCO VALIDATOR
+# ============================================================
 class ESCOValidator:
     """ESCO Database Validator with Domain Filtering"""
     
@@ -356,14 +608,12 @@ class ESCOValidator:
         
         normalized = raw_skill_name.lower().strip()
         
-        # Direct match
         if normalized in self.skill_cache:
             skill_id, canonical = self.skill_cache[normalized]
             if not is_relevant_skill(canonical):
                 return False, raw_skill_name.title(), None, 0.2
             return True, canonical, skill_id, 1.0
         
-        # Fuzzy match
         if FUZZY_AVAILABLE:
             fuzzy_normalized = normalize_skill(raw_skill_name).lower()
             if fuzzy_normalized in self.skill_cache:
@@ -372,27 +622,35 @@ class ESCOValidator:
                     return False, raw_skill_name.title(), None, 0.2
                 return True, canonical, skill_id, 0.9
         
-        # Partial match
         for alias, (skill_id, canonical) in self.skill_cache.items():
-            if len(alias) > 4 and alias in normalized:
-                if not is_relevant_skill(canonical):
-                    continue
-                return True, canonical, skill_id, 0.85
-            if len(normalized) > 4 and normalized in alias:
-                if not is_relevant_skill(canonical):
-                    continue
-                return True, canonical, skill_id, 0.85
+            # Use word boundaries to prevent substring hallucinations
+            if len(alias) > 4:
+                # Check if alias appears as whole word in normalized
+                if re.search(r'\b' + re.escape(alias) + r'\b', normalized):
+                    if not is_relevant_skill(canonical):
+                        continue
+                    return True, canonical, skill_id, 0.85
+            if len(normalized) > 4:
+                # Check if normalized appears as whole word in alias
+                if re.search(r'\b' + re.escape(normalized) + r'\b', alias):
+                    if not is_relevant_skill(canonical):
+                        continue
+                    return True, canonical, skill_id, 0.85
         
         return False, raw_skill_name.title(), None, 0.3
 
 
+# ============================================================
+# RESUME ANALYZER - HYBRID VERSION
+# ============================================================
 class ResumeAnalyzer:
-    """Resume Analyzer with comprehensive extraction fixes"""
+    """Resume Analyzer combining old preprocessing with new filtering"""
     
     def __init__(self):
         self.nlp = nlp
         self.esco = ESCOValidator()
         self.is_academic_cv = False
+        self.candidate_field = 'general'
     
     def detect_academic_cv(self, text):
         """Detect if CV is academic-style"""
@@ -414,16 +672,9 @@ class ResumeAnalyzer:
         return self.is_academic_cv
     
     def extract_contact_info(self, text):
-        """
-        Extract contact information - COMPREHENSIVE email extraction
-        Handles formats like: name@domain.com, name@domain.bh, spaced emails
-        """
+        """Extract contact information"""
         contact = {'email': None, 'phone': None, 'name': None}
         
-        # Strategy: Find potential email patterns first, then clean them
-        # Look for patterns like "word @ word . tld" with possible spaces
-        
-        # First try: standard email pattern on original text
         email_patterns = [
             r'[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.(?:com|edu|org|bh|uk|in|net|gov|io)',
             r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b',
@@ -432,7 +683,7 @@ class ResumeAnalyzer:
         for pattern in email_patterns:
             emails = re.findall(pattern, text, re.IGNORECASE)
             for email in emails:
-                if any(skip in email.lower() for skip in ['orcid', 'scholar', 'linkedin', 'google', 'ssn.edu']):
+                if any(skip in email.lower() for skip in ['orcid', 'scholar', 'linkedin', 'google']):
                     continue
                 if '//' in email or 'http' in email.lower():
                     continue
@@ -441,35 +692,30 @@ class ResumeAnalyzer:
             if contact['email']:
                 break
         
-        # Second try: Look for spaced emails like "shom ona.jacob@ polytechnic.bh"
+        # Try spaced emails
         if not contact['email']:
-            # Find lines that might contain emails (have @ symbol)
             for line in text.split('\n'):
                 if '@' in line:
-                    # Clean just this line - remove spaces around @ and before .tld
                     cleaned_line = re.sub(r'\s*@\s*', '@', line)
-                    cleaned_line = re.sub(r'(\w)\s+(\w)', r'\1\2', cleaned_line)  # Remove mid-word spaces
-                    cleaned_line = re.sub(r'\s*\.\s*(?=com|edu|org|bh|uk|in|net|gov|io)', '.', cleaned_line, flags=re.IGNORECASE)
+                    cleaned_line = re.sub(r'(\w)\s+(\w)', r'\1\2', cleaned_line)
+                    cleaned_line = re.sub(r'\s*\.\s*(?=com|edu|org|bh|uk)', '.', cleaned_line, flags=re.IGNORECASE)
                     
                     for pattern in email_patterns:
                         emails = re.findall(pattern, cleaned_line, re.IGNORECASE)
                         for email in emails:
-                            if any(skip in email.lower() for skip in ['orcid', 'scholar', 'linkedin', 'google', 'ssn.edu']):
-                                continue
-                            if '//' in email or 'http' in email.lower():
-                                continue
-                            contact['email'] = email
-                            break
+                            if not any(skip in email.lower() for skip in ['orcid', 'scholar']):
+                                contact['email'] = email
+                                break
                         if contact['email']:
                             break
                 if contact['email']:
                     break
         
-        # Phone - improved patterns
+        # Phone
         phone_patterns = [
-            r'\+\d{1,3}[-.\s]?\d{6,12}',  # International: +973 36383887
-            r'\b\d{8}\b',  # 8-digit local: 36383887
-            r'\(\d{3}\)\s*\d{3}[-.\s]?\d{4}',  # US format
+            r'\+\d{1,3}[-.\s]?\d{6,12}',
+            r'\b\d{8}\b',
+            r'\(\d{3}\)\s*\d{3}[-.\s]?\d{4}',
         ]
         
         for pattern in phone_patterns:
@@ -482,106 +728,78 @@ class ResumeAnalyzer:
             if contact['phone']:
                 break
         
-        # Name - try to extract from first lines or explicit label
-        lines = text.split('\n')[:15]
-        for line in lines:
-            # Look for "Name: X" or "Name / Surname: X"
-            name_match = re.search(r'(?:name|surname)[:\s/]+([A-Za-z\s]+)', line, re.IGNORECASE)
-            if name_match:
-                contact['name'] = name_match.group(1).strip()
-                break
-        
         return contact
     
     def _extract_section(self, text, section_type):
-        """Extract a specific section from CV - IMPROVED to handle various formats"""
+        """Extract a specific section from CV - FROM OLD CODE (robust)"""
         lines = text.split('\n')
         in_section = False
         section_lines = []
         
         headers = {
             'education': ['education', 'academic background', 'qualifications', 'academic qualifications'],
-            'employment': ['employment', 'work experience', 'professional experience', 
+            'employment': ['employment', 'work experience', 'professional experience',
                           'employment history', 'career history', 'work history', 'experience',
                           'professional background', 'career summary'],
-            'professional experience': ['professional experience'],
-            'academic appointments': ['academic appointments', 'academic positions', 'teaching positions'],
-            'teaching and research': ['teaching and research', 'teaching experience', 'research experience'],
+            'academic_appointments': ['academic appointments', 'academic positions', 'teaching positions'],
+            'teaching': ['teaching and research', 'teaching experience', 'research experience'],
             'certifications': ['certification', 'certificate', 'licenses'],
             'skills': ['skills', 'competencies', 'expertise', 'technical skills', 'key competencies'],
         }
         
         start_markers = headers.get(section_type, [section_type])
-        end_markers = ['education', 'skills', 'certifications', 'publications', 
-                       'references', 'awards', 'languages', 'honors', 'memberships', 
+        end_markers = ['education', 'skills', 'certifications', 'publications',
+                       'references', 'awards', 'languages', 'honors', 'memberships',
                        'training', 'research projects', 'key achievements', 'students supervised',
                        'additional information', 'interests', 'hobbies']
         
-        # Remove start markers from end markers to avoid premature termination
         end_markers = [m for m in end_markers if m not in start_markers]
         
         for i, line in enumerate(lines):
             line_lower = line.lower().strip()
             
-            # Check for section start - look for marker ANYWHERE in line (not just start)
             if not in_section:
                 for marker in start_markers:
                     if marker in line_lower:
                         in_section = True
-                        # Don't include the header line itself
                         break
                 continue
             
-            # Check for section end
             if in_section:
-                # Check if this line starts a new section
                 is_new_section = False
                 for end_marker in end_markers:
-                    # Must be at start of line or be the whole line (to avoid false matches)
                     if line_lower.startswith(end_marker) or line_lower == end_marker:
                         is_new_section = True
                         break
-                    # Also check for "SECTION NAME" format (all caps)
                     if line.strip().isupper() and end_marker in line_lower:
                         is_new_section = True
                         break
                 
                 if is_new_section:
                     break
-                    
+                
                 section_lines.append(line)
         
         return '\n'.join(section_lines)
     
     def extract_education(self, text):
-        """
-        Extract education - COMPREHENSIVE handling of all formats:
-        - Ph.D., PhD, Ph.D, Ph.D - Field
-        - M.Sc., MSc, Master of Science, Master's Degree, Master of Engineering
-        - B.Sc., BSc, Bachelor of Science, Bachelor's Degree, Bachelor of Engineering
-        - B.Sc. Hons.
-        - Multi-line formats (University on one line, degree on next)
-        """
-        # Normalize text first
+        """Extract education with comprehensive pattern matching"""
         normalized_text = normalize_cv_text(text)
         
         degrees = []
         highest_rank = -1
-        seen_fields = set()  # Track to avoid duplicates
+        seen_fields = set()
         
-        # PATTERN 0: Simple "M.Sc. Field" or "B.Sc. Field" on single line (Neha format)
-        # Must check FIRST as it's most specific
-        # Stop at university/institute names
-        pattern0 = r'\b(M\.?Sc\.?|B\.?Sc\.?)\s*(?:Hons\.?)?\s+([A-Z][A-Za-z\s&]+?)(?:\s+(?:University|Institute|College|School|Heriot|City|Anna)|$|\n|,|\d{4})'
+        # Pattern 1: "M.Sc. Field" or "B.Sc. Field"
+        pattern1 = r'\b(M\.?Sc\.?|B\.?Sc\.?)\s*(?:Hons\.?)?\s+([A-Z][A-Za-z\s&]+?)(?:\s+(?:University|Institute|College)|$|\n|,|\d{4})'
         
-        for match in re.finditer(pattern0, normalized_text, re.MULTILINE | re.IGNORECASE):
+        for match in re.finditer(pattern1, normalized_text, re.MULTILINE | re.IGNORECASE):
             degree_text = match.group(1).strip()
             field = match.group(2).strip().rstrip(',.')
             
-            # Skip if field is invalid
             if len(field) < 3 or field.lower() in seen_fields:
                 continue
-            if any(x in field.lower() for x in ['university', 'institute', 'college', 'heriot', 'city']):
+            if any(x in field.lower() for x in ['university', 'institute', 'college']):
                 continue
             
             seen_fields.add(field.lower())
@@ -599,14 +817,12 @@ class ResumeAnalyzer:
             if degree_info['rank'] > highest_rank:
                 highest_rank = degree_info['rank']
         
-        # PATTERN 1: "Ph.D - Field" or "Master of Engineering - Field" (Dr. Shomona format)
-        pattern1 = r'(Ph\.?D\.?|Doctorate|Master\s+of\s+\w+|Bachelor\s+of\s+\w+)\s*[-–—]\s*([A-Za-z\s,&()]+?)(?:,|\n|\d{4})'
+        # Pattern 2: "Ph.D - Field" or "Master of X - Field"
+        pattern2 = r'(Ph\.?D\.?|Doctorate|Master\s+of\s+\w+|Bachelor\s+of\s+\w+)\s*[-–—]\s*([A-Za-z\s,&()]+?)(?:,|\n|\d{4})'
         
-        for match in re.finditer(pattern1, normalized_text, re.IGNORECASE):
+        for match in re.finditer(pattern2, normalized_text, re.IGNORECASE):
             degree_text = match.group(1).strip()
             field = match.group(2).strip().rstrip(',.')
-            
-            # Clean field - remove parenthetical
             field = re.sub(r'\s*\([^)]*\)\s*$', '', field).strip()
             
             if field.lower() in seen_fields or len(field) < 3:
@@ -627,10 +843,10 @@ class ResumeAnalyzer:
             if degree_info['rank'] > highest_rank:
                 highest_rank = degree_info['rank']
         
-        # PATTERN 2: "Bachelor's Degree in X" (Yaman format - with HTML entity fix)
-        pattern2 = r"(Bachelor'?s?|Master'?s?)\s+Degree\s+in\s+([A-Za-z][A-Za-z\s&]+?)(?:\s*$|\s*\n|\s*,|\s*\d{4})"
+        # Pattern 3: "Bachelor's Degree in X"
+        pattern3 = r"(Bachelor'?s?|Master'?s?)\s+Degree\s+in\s+([A-Za-z][A-Za-z\s&]+?)(?:\s*$|\s*\n|\s*,|\s*\d{4})"
         
-        for match in re.finditer(pattern2, normalized_text, re.IGNORECASE | re.MULTILINE):
+        for match in re.finditer(pattern3, normalized_text, re.IGNORECASE | re.MULTILINE):
             degree_text = match.group(1).strip()
             field = match.group(2).strip().rstrip(',.')
             
@@ -652,10 +868,10 @@ class ResumeAnalyzer:
             if degree_info['rank'] > highest_rank:
                 highest_rank = degree_info['rank']
         
-        # PATTERN 3: Standard format - YEAR – YEAR Degree in Field from Institution
-        pattern3 = r'(\d{4})\s*[–—-]\s*(\d{4})?\s*(Ph\.?D\.?|Doctorate|Master|Bachelor)[^\d]*?(?:in|of)\s+([A-Za-z\s,&]+?)\s+from\s+([A-Za-z\s,]+?)(?:\s*[-–]|\s*Thesis|\s*,\s*[A-Z]|\s*$)'
+        # Pattern 4: "YEAR – YEAR Degree in Field from Institution"
+        pattern4 = r'(\d{4})\s*[–—-]\s*(\d{4})?\s*(Ph\.?D\.?|Doctorate|Master|Bachelor)[^\d]*?(?:in|of)\s+([A-Za-z\s,&]+?)\s+from\s+([A-Za-z\s,]+?)(?:\s*[-–]|\s*Thesis|\s*,\s*[A-Z]|\s*$)'
         
-        for match in re.finditer(pattern3, normalized_text, re.IGNORECASE):
+        for match in re.finditer(pattern4, normalized_text, re.IGNORECASE):
             start_year = match.group(1)
             end_year = match.group(2) or start_year
             degree_text = match.group(3).strip()
@@ -667,12 +883,6 @@ class ResumeAnalyzer:
             seen_fields.add(field.lower())
             
             degree_info = self._classify_degree(degree_text)
-            
-            # Clean up field
-            if field.lower().startswith('engineering in '):
-                field = field[15:]
-            elif field.lower().startswith('engineering of '):
-                field = field[15:]
             
             degrees.append({
                 'degree': degree_info['name'],
@@ -686,7 +896,7 @@ class ResumeAnalyzer:
             if degree_info['rank'] > highest_rank:
                 highest_rank = degree_info['rank']
         
-        # PATTERN 4: Simple detection fallback
+        # Fallback: Simple detection
         if not degrees:
             simple_patterns = [
                 (r'\b(ph\.?\s*d\.?|doctorate|doctoral)\b', 'PhD', 'phd', 3),
@@ -719,25 +929,32 @@ class ResumeAnalyzer:
                 'graduation_year': None
             })
         
-        # Sort by rank (highest first)
         degrees.sort(key=lambda x: x['rank'], reverse=True)
         
-        # Check for Islamic Finance certifications
+        # Certifications
+        print(f"  ✅ Loaded certifications from JSON")
+        certs_found = detect_certifications(text)
+        
         has_if_cert = False
         cert_names = []
-        text_lower = text.lower()
         
-        for cert in ISLAMIC_FINANCE_CERTS:
-            if cert in text_lower:
+        for cert in certs_found:
+            if 'islamic' in cert['category'].lower() or 'finance' in cert['category'].lower():
                 has_if_cert = True
-                cert_names.append(cert.upper())
+                cert_names.append(cert['name'])
+        
+        if certs_found:
+            print(f"   📜 Certifications: {len(certs_found)} found")
+            for cert in certs_found[:3]:
+                print(f"      - {cert['name']} ({cert['category']})")
         
         return {
             'degrees': degrees,
             'level': degrees[0]['level'] if degrees else 'unknown',
             'highest_rank': highest_rank,
             'has_islamic_finance_cert': has_if_cert,
-            'certification_names': ', '.join(cert_names) if cert_names else None
+            'certification_names': ', '.join(cert_names) if cert_names else None,
+            'all_certifications': certs_found
         }
     
     def _classify_degree(self, degree_text):
@@ -757,210 +974,370 @@ class ResumeAnalyzer:
     
     def extract_experience(self, text):
         """
-        Extract years of experience - CV-TYPE-AWARE APPROACH with DATE NORMALIZATION
+        HYBRID Experience Extraction
+        =============================
+        FROM OLD CODE:
+        - normalize_cv_text() first
+        - normalize_dates_in_text() first
+        - 0.5 year merge tolerance
+        - CV-type-aware section extraction
         
-        1. Normalize all dates to MM/YYYY format
-        2. Extract from employment section(s)
-        3. Merge overlapping intervals
-        4. Sum total years
+        FROM NEW CODE:
+        - int() flooring (not rounding)
+        - Academic service exclusion
+        - Education line exclusion
+        - Course vs teaching distinction
         """
         current_year = datetime.now().year
         current_month = datetime.now().month
         
-        # Normalize text and dates
+        # ============================================================
+        # STEP 0: NORMALIZE TEXT AND DATES (FROM OLD CODE - CRITICAL)
+        # ============================================================
         normalized_text = normalize_cv_text(text)
         normalized_text = normalize_dates_in_text(normalized_text)
         
         # Detect CV type
         is_academic = self.detect_academic_cv(normalized_text)
+        print(f"📄 CV Type: {'Academic' if is_academic else 'Industry'}")
         
         # ============================================================
-        # STEP 1: Extract employment section(s)
+        # STEP 1: Check for explicit experience statements (but don't trust blindly)
         # ============================================================
-        
-        if is_academic:
-            section_headers = ['employment', 'professional experience', 'academic appointments',
-                              'teaching and research', 'work experience', 'career history']
-        else:
-            section_headers = ['employment']
-        
-        all_section_dates = []
-        
-        for section_type in section_headers:
-            employment_section = self._extract_section(normalized_text, section_type)
-            
-            if employment_section and len(employment_section.strip()) > 50:
-                # For each line in section, extract MM/YYYY dates
-                for line in employment_section.split('\n'):
-                    line_lower = line.lower()
-                    
-                    # FIRST: Handle mixed lines - truncate at "Education" section
-                    process_line = line
-                    process_line_lower = line_lower
-                    edu_markers = ['education ph.d', 'education master', 'education bachelor', ' education ']
-                    for marker in edu_markers:
-                        if marker in line_lower:
-                            pos = line_lower.find(marker)
-                            process_line = line[:pos]
-                            process_line_lower = process_line.lower()
-                            break
-                    
-                    # NOW apply skip checks on the TRUNCATED line
-                    # Skip clear education lines (degree names)
-                    if any(edu in process_line_lower for edu in ['ph.d in', 'phd in', 'master of', 'bachelor of', 
-                                                          'm.sc.', 'b.sc.', 'diploma in', 'gpa:']):
-                        continue
-                    
-                    # Skip award/honor lines (entire line is about awards)
-                    if any(award in process_line_lower for award in ['award', 'honor', 'achievement', 'best performer',
-                                                              'certificate in']):
-                        continue
-                    
-                    # Skip interests/hobbies/sports lines
-                    if any(hobby in process_line_lower for hobby in ['interests', 'hobbies', 'sports', 'athletics',
-                                                              'prefect', 'dramatics', 'extracurricular']):
-                        continue
-                    
-                    # INDUSTRY CV: Skip university lines without job titles
-                    if not is_academic:
-                        has_university = 'university' in process_line_lower or 'college' in process_line_lower
-                        job_titles = ['developer', 'engineer', 'manager', 'analyst', 'lead', 'head',
-                                     'director', 'consultant', 'officer', 'specialist', 'coordinator']
-                        has_job = any(job in process_line_lower for job in job_titles)
-                        
-                        if has_university and not has_job:
-                            continue
-                    
-                    # Extract ALL MM/YYYY date ranges from the processed line
-                    for match in re.finditer(r'(\d{1,2})/(\d{4})\s*–\s*(?:(\d{1,2})/(\d{4})|(present|current|now))', process_line, re.IGNORECASE):
-                        start_month, start_year = int(match.group(1)), int(match.group(2))
-                        if match.group(5):  # present/current
-                            end_year, end_month = current_year, current_month
-                        else:
-                            end_month, end_year = int(match.group(3)), int(match.group(4))
-                        
-                        if 1980 <= start_year <= current_year and start_year <= end_year:
-                            all_section_dates.append((start_year + start_month/12, end_year + end_month/12))
-        
-        # ============================================================
-        # STEP 2: Merge and calculate
-        # ============================================================
-        if all_section_dates:
-            # Remove duplicates
-            unique_dates = list(set(all_section_dates))
-            
-            # Sort by start date
-            intervals = sorted(unique_dates, key=lambda x: x[0])
-            
-            # Merge overlapping intervals (with 0.5 year gap allowance)
-            merged = []
-            for start, end in intervals:
-                if not merged or start > merged[-1][1] + 0.5:
-                    merged.append([start, end])
-                else:
-                    merged[-1][1] = max(merged[-1][1], end)
-            
-            total_years = sum(end - start for start, end in merged)
-            years = int(round(total_years))
-            
-            if years > 0:
-                return min(years, 50)
-        
-        # ============================================================
-        # FALLBACK: Explicit statement
-        # ============================================================
+        explicit_years_claim = None
         explicit_patterns = [
-            r'(?:I\s+have|with|bringing)\s+(\d+)\+?\s*years?\s+(?:of\s+)?(?:professional\s+)?experience',
-            r'(\d+)\+?\s*years?\s+of\s+(?:proven|professional|hands-on)',
-            r'Leader\s+with\s+(\d+)\+?\s*years',
-            r'(\d+)\+?\s*years?\s+(?:of\s+)?(?:industry|work)\s+experience',
+            r'(\d+)\+?\s*years?\s+(?:of\s+)?(?:professional\s+)?experience',
+            r'experience\s*[:\-]?\s*(\d+)\+?\s*years?',
+            r'(\d+)\+?\s*years?\s+in\s+(?:the\s+)?(?:field|industry)',
         ]
         
         for pattern in explicit_patterns:
-            match = re.search(pattern, normalized_text, re.IGNORECASE)
-            if match:
-                years = int(match.group(1))
-                if 1 <= years <= 40:
-                    return years
+            matches = re.findall(pattern, normalized_text.lower())
+            if matches:
+                years_found = [int(m) for m in matches if int(m) <= 50]
+                if years_found:
+                    explicit_years_claim = max(years_found)
+                    break  # Found explicit claim, but DON'T return yet
         
         # ============================================================
-        # FALLBACK: Line-by-line with job indicators
+        # STEP 2: Section-based extraction (FROM OLD CODE)
         # ============================================================
-        all_date_ranges = []
+        if is_academic:
+            section_types = ['employment', 'academic_appointments', 'teaching']
+        else:
+            section_types = ['employment']
         
-        job_indicators = [
-            'developer', 'engineer', 'manager', 'director', 'analyst',
-            'consultant', 'lead', 'head', 'officer', 'specialist',
-            'professor', 'lecturer', 'teacher', 'coordinator',
-            'architect', 'administrator', 'scientist', 'researcher',
-            'mentor', 'instructor', 'advisor', 'executive', 'president',
-            'ceo', 'cto', 'cfo', 'vp', 'associate'
+        all_dates = []
+        counted_roles = []
+        skipped_roles = []
+        
+        # Job title indicators
+        job_titles = [
+            'professor', 'associate professor', 'assistant professor',
+            'lecturer', 'senior lecturer', 'teacher', 'instructor', 'mentor',
+            'engineer', 'developer', 'programmer', 'architect',
+            'manager', 'director', 'lead', 'head', 'chief',
+            'analyst', 'consultant', 'specialist', 'officer',
+            'coordinator', 'administrator', 'supervisor',
+            'scientist', 'researcher', 'research associate', 'postdoc',
+            'executive', 'president', 'ceo', 'cto', 'vp',
+            'accountant', 'auditor', 'banker', 'trader',
+            'intern', 'trainee', 'associate', 'senior', 'junior',
         ]
         
-        for line in normalized_text.split('\n'):
-            line_lower = line.lower()
-            
-            # Skip education lines
-            if any(edu in line_lower for edu in ['university', 'college', 'bachelor', 'master', 'phd', 'degree', 'gpa', 'diploma']):
-                if not is_academic or not any(job in line_lower for job in job_indicators):
-                    continue
-            
-            # Must have job indicator OR "present/current"
-            has_job = any(job in line_lower for job in job_indicators)
-            has_present = 'present' in line_lower or 'current' in line_lower
-            
-            if not has_job and not has_present:
-                continue
-            
-            # Extract dates
-            for match in re.finditer(r'(\d{1,2})/(\d{4})\s*–\s*(?:(\d{1,2})/(\d{4})|(present|current|now))', line, re.IGNORECASE):
-                start_month, start_year = int(match.group(1)), int(match.group(2))
-                if match.group(5):
-                    end_year, end_month = current_year, current_month
-                else:
-                    end_month, end_year = int(match.group(3)), int(match.group(4))
-                
-                if 1980 <= start_year <= current_year and start_year <= end_year <= current_year + 1:
-                    all_date_ranges.append((start_year + start_month/12, end_year + end_month/12))
+        # Academic service (NOT employment) - FROM NEW CODE
+        academic_service = [
+            'associate editor', 'guest editor', 'editorial board',
+            'reviewer', 'peer reviewer', 'sub-reviewer',
+            'member', 'committee', 'board member', 'tpc member',
+            'session chair', 'conference chair', 'workshop chair',
+            'keynote', 'invited speaker', 'panelist',
+            'award', 'scholarship', 'grant', 'fellowship',
+            'supervised', 'thesis supervisor',
+        ]
         
-        if all_date_ranges:
-            unique_dates = list(set(all_date_ranges))
+        # Education indicators - FROM NEW CODE
+        education_keywords = [
+            'bachelor', 'master', 'phd', 'ph.d', 'doctorate',
+            'degree', 'diploma', 'gpa', 'cgpa', 'thesis', 'dissertation',
+        ]
+        
+        # Course indicators (not teaching jobs)
+        course_indicators = ['course', 'learning', 'training', 'module', 'curriculum']
+        
+        # Teaching indicators (ARE jobs)
+        teaching_indicators = ['lecturer', 'teacher', 'professor', 'instructor', 'mentor', 'faculty']
+        
+        for section_type in section_types:
+            section_text = self._extract_section(normalized_text, section_type)
+            
+            if section_text and len(section_text.strip()) > 50:
+                print(f"   ✓ Found {section_type} section")
+                
+                for line in section_text.split('\n'):
+                    line_lower = line.lower().strip()
+                    if not line_lower or len(line_lower) < 10:
+                        continue
+                    
+                    # Check for date pattern
+                    date_match = re.search(
+                        r'(\d{1,2})/(\d{4})\s*–\s*(?:(\d{1,2})/(\d{4})|(present|current|now))',
+                        line, re.IGNORECASE
+                    )
+                    if not date_match:
+                        continue
+                    
+                    description = line[:60].strip() + ('...' if len(line) > 60 else '')
+                    
+                    # GATE 1: Education check
+                    is_education = any(edu in line_lower for edu in education_keywords)
+                    if is_education:
+                        skipped_roles.append(f"EDUCATION: {description}")
+                        continue
+                    
+                    # GATE 2: Academic service check
+                    is_service = any(svc in line_lower for svc in academic_service)
+                    has_job_title = any(job in line_lower for job in job_titles)
+                    
+                    if is_service and not has_job_title:
+                        skipped_roles.append(f"SERVICE: {description}")
+                        continue
+                    
+                    # GATE 3: Course check (but teaching jobs are OK)
+                    is_course = any(ctx in line_lower for ctx in course_indicators)
+                    is_teaching = any(t in line_lower for t in teaching_indicators)
+                    
+                    if is_course and not is_teaching:
+                        skipped_roles.append(f"COURSE: {description}")
+                        continue
+                    
+                    # Extract dates - USE MONTHS not decimal years
+                    start_month, start_year = int(date_match.group(1)), int(date_match.group(2))
+                    if date_match.group(5):
+                        end_year, end_month = current_year, current_month
+                    else:
+                        end_month, end_year = int(date_match.group(3)), int(date_match.group(4))
+                    
+                    if 1980 <= start_year <= current_year and start_year <= end_year:
+                        # Convert to total months (no floating point)
+                        start_months = start_year * 12 + (start_month - 1)
+                        end_months = end_year * 12 + (end_month - 1)
+                        
+                        # SHORT ACADEMIC ROLE FILTER
+                        # Skip micro-appointments (mentor, adjunct, visiting) < 12 months
+                        if is_academic and any(t in line_lower for t in ['mentor', 'adjunct', 'visiting', 'temporary']):
+                            if (end_months - start_months) < 12:
+                                skipped_roles.append(f"SHORT ROLE: {description}")
+                                continue
+                        
+                        # Sanity check: max 30 years per role
+                        if (end_months - start_months) <= 360:
+                            all_dates.append((start_months, end_months))
+                            counted_roles.append(f"{start_year}-{end_year}: {description}")
+        
+        # ============================================================
+        # STEP 3: Fallback - line-by-line with job indicators
+        # ============================================================
+        if not all_dates:
+            print(f"   ⚠️ No section found - using line-by-line fallback")
+            
+            for line in normalized_text.split('\n'):
+                line_lower = line.lower().strip()
+                if not line_lower or len(line_lower) < 10:
+                    continue
+                
+                date_match = re.search(
+                    r'(\d{1,2})/(\d{4})\s*–\s*(?:(\d{1,2})/(\d{4})|(present|current|now))',
+                    line, re.IGNORECASE
+                )
+                if not date_match:
+                    continue
+                
+                description = line[:60].strip() + ('...' if len(line) > 60 else '')
+                
+                # Skip education
+                is_education = any(edu in line_lower for edu in education_keywords)
+                if is_education:
+                    skipped_roles.append(f"EDUCATION: {description}")
+                    continue
+                
+                # Skip service
+                is_service = any(svc in line_lower for svc in academic_service)
+                has_job_title = any(job in line_lower for job in job_titles)
+                has_present = bool(date_match.group(5))
+                
+                if is_service and not has_job_title:
+                    skipped_roles.append(f"SERVICE: {description}")
+                    continue
+                
+                # Skip courses (but not teaching)
+                is_course = any(ctx in line_lower for ctx in course_indicators)
+                is_teaching = any(t in line_lower for t in teaching_indicators)
+                
+                if is_course and not is_teaching:
+                    skipped_roles.append(f"COURSE: {description}")
+                    continue
+                
+                # Accept if job title OR present
+                if has_job_title or has_present:
+                    start_month, start_year = int(date_match.group(1)), int(date_match.group(2))
+                    if date_match.group(5):
+                        end_year, end_month = current_year, current_month
+                    else:
+                        end_month, end_year = int(date_match.group(3)), int(date_match.group(4))
+                    
+                    if 1980 <= start_year <= current_year and start_year <= end_year:
+                        # Convert to total months (no floating point)
+                        start_months = start_year * 12 + (start_month - 1)
+                        end_months = end_year * 12 + (end_month - 1)
+                        
+                        # Sanity check: max 30 years per role
+                        if (end_months - start_months) <= 360:
+                            all_dates.append((start_months, end_months))
+                            counted_roles.append(f"{start_year}-{end_year}: {description}")
+                else:
+                    skipped_roles.append(f"NO TITLE: {description}")
+        
+        # Log what was counted/skipped
+        if counted_roles:
+            print(f"   COUNTED: {len(counted_roles)} roles")
+            for role in counted_roles[:3]:
+                print(f"      ✓ {role}")
+        if skipped_roles:
+            print(f"   SKIPPED: {len(skipped_roles)} non-employment items")
+            for role in skipped_roles[:3]:
+                print(f"      ✗ {role}")
+        
+        # ============================================================
+        # STEP 4: Merge and calculate using MONTHS (no floating point drift)
+        # ============================================================
+        if all_dates:
+            unique_dates = list(set(all_dates))
             intervals = sorted(unique_dates, key=lambda x: x[0])
+            
+            # CV-type-aware merge tolerance (in months)
+            # Academic: 0 months (roles often overlap)
+            # Industry: 6 months (gaps between jobs)
+            merge_tolerance = 0 if is_academic else 6
             
             merged = []
             for start, end in intervals:
-                if not merged or start > merged[-1][1] + 0.5:
+                if not merged or start > merged[-1][1] + merge_tolerance:
                     merged.append([start, end])
                 else:
                     merged[-1][1] = max(merged[-1][1], end)
             
-            total_years = sum(end - start for start, end in merged)
-            return min(int(round(total_years)), 50)
+            # Calculate total months, then convert to years
+            total_months = sum(end - start for start, end in merged)
+            calculated_years = min(total_months // 12, 50)  # Integer division - no drift
+            
+            # BOUNDED TRUST: If explicit claim exists, allow +1 year generosity max
+            if explicit_years_claim is not None:
+                result = min(calculated_years + 1, explicit_years_claim)
+                print(f"   Years (calculated: {calculated_years}, claimed: {explicit_years_claim}): {result}")
+            else:
+                result = calculated_years
+                print(f"   Years (from {len(merged)} employment periods): {result}")
+            
+            # INVARIANT ASSERTION
+            assert 0 <= result <= 50, f"Experience years out of bounds: {result}"
+            
+            return result
         
+        # If no dates found but explicit claim exists, use it with cap
+        if explicit_years_claim is not None:
+            result = min(explicit_years_claim, 20)  # Cap at 20 if no timeline
+            print(f"   Years (explicit claim only, capped): {result}")
+            return result
+        
+        print(f"   Years: 0 (no experience found)")
         return 0
     
     def check_islamic_finance_exp(self, text):
+        """Check for Islamic Finance experience"""
         keywords = ['sukuk', 'mudarabah', 'musharakah', 'sharia', 'takaful',
                     'islamic finance', 'islamic banking', 'ijara', 'murabaha']
         text_lower = text.lower()
         return any(kw in text_lower for kw in keywords)
     
-    def detect_skills_regex(self, text):
-        """Detect skills using regex patterns"""
-        text_lower = text.lower()
-        detected = []
+    def detect_skills_regex(self, text, normalized_text=None):
+        """
+        Detect skills using regex patterns - SECTION-AWARE with SOURCE TRACKING
         
+        STEP 1: Track where each skill was found (provenance)
+        - Skills section: weight 1.0
+        - Near job titles: weight 0.7
+        - Inline/other: weight 0.3
+        """
+        # Try to extract skills section first
+        skill_section = self._extract_section(text, 'skills')
+        employment_section = self._extract_section(text, 'employment')
+        
+        detected = []
+        skill_sources = {}  # Track where each skill was found
+        
+        # PASS 1: Check Skills section (highest weight)
+        if skill_section and len(skill_section.strip()) > 50:
+            skill_section_lower = skill_section.lower()
+            print(f"   📋 Skills section found ({len(skill_section)} chars)")
+            
+            for skill_name, pattern in RECALL_PATTERNS.items():
+                if re.search(pattern, skill_section_lower, re.IGNORECASE):
+                    skill_sources[skill_name] = {
+                        'source': 'skills_section',
+                        'weight': 1.0,
+                        'frequency': len(re.findall(pattern, skill_section_lower, re.IGNORECASE))
+                    }
+        
+        # PASS 2: Check Employment section (medium weight)
+        if employment_section and len(employment_section.strip()) > 50:
+            employment_lower = employment_section.lower()
+            
+            for skill_name, pattern in RECALL_PATTERNS.items():
+                if skill_name not in skill_sources:  # Not already found in skills section
+                    if re.search(pattern, employment_lower, re.IGNORECASE):
+                        skill_sources[skill_name] = {
+                            'source': 'employment_section',
+                            'weight': 0.7,
+                            'frequency': len(re.findall(pattern, employment_lower, re.IGNORECASE))
+                        }
+                else:
+                    # Also in employment - boost frequency
+                    additional = len(re.findall(pattern, employment_lower, re.IGNORECASE))
+                    skill_sources[skill_name]['frequency'] += additional
+        
+        # PASS 3: Check full CV for remaining skills (lowest weight)
+        text_lower = text.lower()
         for skill_name, pattern in RECALL_PATTERNS.items():
-            if re.search(pattern, text_lower, re.IGNORECASE):
-                detected.append({
-                    'raw_name': skill_name,
-                    'source': 'regex'
-                })
+            if skill_name not in skill_sources:
+                if re.search(pattern, text_lower, re.IGNORECASE):
+                    skill_sources[skill_name] = {
+                        'source': 'inline',
+                        'weight': 0.3,
+                        'frequency': len(re.findall(pattern, text_lower, re.IGNORECASE))
+                    }
+        
+        # Build detected list with source info
+        for skill_name, source_info in skill_sources.items():
+            detected.append({
+                'raw_name': skill_name,
+                'source': source_info['source'],
+                'source_weight': source_info['weight'],
+                'frequency': source_info['frequency']
+            })
         
         return detected
     
-    def validate_and_classify_skills(self, detected_skills):
-        """Validate skills against ESCO and classify"""
+    def validate_and_classify_skills(self, detected_skills, candidate_field='technology'):
+        """
+        Validate skills with PRODUCTION-GRADE signal prioritization
+        
+        STEP 1: Source weighting (skills section > employment > inline)
+        STEP 2: Experience anchoring (hard skills need job context)
+        STEP 3: Frequency thresholds (repetition = stronger signal)
+        STEP 4: Separate display vs scoring skills
+        STEP 5: Soft penalty for field-irrelevant hard skills (not hard block)
+        """
         validated = []
         unvalidated = []
         filtered_out = []
@@ -968,38 +1345,89 @@ class ResumeAnalyzer:
         for skill in detected_skills:
             is_valid, canonical, skill_id, confidence = self.esco.validate_skill(skill['raw_name'])
             
-            # Domain filtering - check relevance
+            # Get source info
+            source = skill.get('source', 'inline')
+            source_weight = skill.get('source_weight', 0.3)
+            frequency = skill.get('frequency', 1)
+            
+            # LAYER 1: Domain filtering - hard block irrelevant ESCO noise
             if not is_relevant_skill(canonical):
-                filtered_out.append(canonical)
+                filtered_out.append(f"Domain: {canonical}")
                 continue
             
-            # Determine category
+            # Additional check for behavioral ESCO noise
+            canonical_lower = canonical.lower()
+            if any(phrase in canonical_lower for phrase in [
+                'react calmly', 'stressful situations', 'adverse reactions',
+                'anaesthesia', 'anesthesia', 'medical emergency',
+                'manage adverse', 'patient', 'therapy'
+            ]):
+                filtered_out.append(f"Behavioral: {canonical}")
+                continue
+            
+            # Determine category FIRST (needed for field filtering logic)
             name_lower = canonical.lower()
             if any(kw in name_lower for kw in ['sukuk', 'mudarab', 'sharia', 'takaful', 'islamic', 'ijara']):
                 category = 'islamic_finance'
             elif any(kw in name_lower for kw in ['financ', 'account', 'valuation', 'bloomberg', 'audit']):
                 category = 'finance'
-            elif any(kw in name_lower for kw in ['communication', 'leadership', 'teamwork', 'presentation', 'negotiation']):
+            elif any(kw in name_lower for kw in ['communication', 'leadership', 'teamwork', 'presentation', 'lead others']):
                 category = 'soft_skill'
             else:
                 category = 'technical'
             
-            hard = category not in ['soft_skill']
+            is_hard_skill = category not in ['soft_skill']
             
-            # Academic CV adjustment
-            if self.is_academic_cv:
-                if any(kw in name_lower for kw in ['teaching', 'research', 'publication']):
-                    confidence *= 0.7
+            # STEP 5: Field filtering - SOFT PENALTY for all (not hard block)
+            # This prevents Finance candidates from losing legitimate analytics skills
+            field_allowed = is_skill_allowed_for_field(canonical, candidate_field)
+            
+            if not field_allowed:
+                # SOFT PENALTY instead of hard block
+                confidence *= 0.4
+            
+            # STEP 2: Experience anchoring for hard skills
+            # Hard skills from inline text (not skills/employment section) get penalty
+            if is_hard_skill and source == 'inline':
+                confidence *= 0.6  # Lighter penalty
+            
+            # STEP 3: Frequency bonus
+            if frequency >= 3:
+                confidence = min(1.0, confidence * 1.2)
+            elif frequency >= 2:
+                confidence = min(1.0, confidence * 1.1)
+            
+            # STEP 1: Apply source weight to final confidence
+            # But don't penalize too heavily - skills section should boost, not inline penalize
+            if source == 'skills_section':
+                final_confidence = confidence * 1.0  # Full confidence
+            elif source == 'employment_section':
+                final_confidence = confidence * 0.85  # Slight reduction
+            else:
+                final_confidence = confidence * 0.7  # Moderate reduction
+            
+            # ACADEMIC CONFIDENCE FLOOR + CAP
+            # Academics list tools once - presence matters more than repetition
+            # But don't overweight - cap at 0.7 to prevent sparse CV inflation
+            if candidate_field == 'academic' and is_hard_skill:
+                final_confidence = min(0.7, max(final_confidence, 0.4))
+            
+            # STEP 4: Determine if skill is "scorable" vs just "displayable"
+            is_scorable = final_confidence >= 0.25  # Lowered threshold
             
             skill_data = {
                 'canonical_name': canonical,
                 'raw_name': skill['raw_name'],
                 'esco_id': skill_id,
                 'category': category,
-                'is_hard_skill': hard,
-                'confidence': confidence,
+                'is_hard_skill': is_hard_skill,
+                'confidence': final_confidence,
                 'validated': is_valid,
-                'source': 'esco' if is_valid else 'regex_only'
+                'source': source,
+                'source_weight': source_weight,
+                'frequency': frequency,
+                'field_relevant': field_allowed,
+                'is_scorable': is_scorable
             }
             
             if is_valid:
@@ -1008,9 +1436,19 @@ class ResumeAnalyzer:
                 unvalidated.append(skill_data)
         
         if filtered_out:
-            print(f"   🚫 Filtered: {', '.join(filtered_out[:5])}{'...' if len(filtered_out) > 5 else ''}")
+            unique_filtered = list(dict.fromkeys(filtered_out))[:5]
+            print(f"   🚫 Filtered: {', '.join(unique_filtered)}{'...' if len(filtered_out) > 5 else ''}")
         
-        return validated, unvalidated
+        # Deduplicate validated skills by canonical name
+        seen_names = set()
+        deduplicated = []
+        for skill in validated:
+            name_lower = skill['canonical_name'].lower()
+            if name_lower not in seen_names:
+                seen_names.add(name_lower)
+                deduplicated.append(skill)
+        
+        return deduplicated, unvalidated
     
     # ============================================================
     # SCORING
@@ -1030,12 +1468,12 @@ class ResumeAnalyzer:
         else:
             score = 30
         
-        if edu_data['has_islamic_finance_cert']:
+        if edu_data.get('has_islamic_finance_cert'):
             score = min(100, score + 15)
         
         return score
     
-    def calculate_experience_score(self, years, has_if_exp):
+    def calculate_experience_score(self, years, has_if_exp=False):
         if years >= 15:
             score = 100
         elif years >= 10:
@@ -1045,11 +1483,11 @@ class ResumeAnalyzer:
         elif years >= 5:
             score = 70
         elif years >= 3:
-            score = 55
+            score = 60
         elif years >= 1:
-            score = 40
+            score = 45
         else:
-            score = 20
+            score = 25
         
         if has_if_exp:
             score = min(100, score + 10)
@@ -1057,39 +1495,63 @@ class ResumeAnalyzer:
         return score
     
     def calculate_skills_score(self, validated_skills, hard_weight=0.7, soft_weight=0.3):
+        """
+        Calculate skills score using ONLY scorable skills (STEP 4)
+        
+        Scorable = high-confidence, role-anchored skills
+        Display = all validated ESCO skills (for UI)
+        
+        # NOTE:
+        # Thresholds calibrated against confidence-weighted sums (0.4–1.0 per skill)
+        # DO NOT convert back to raw counts — this prevents skill inflation
+        # These values are FROZEN after production testing on 4 CVs
+        """
         if not validated_skills:
             return 0
         
-        hard = [s for s in validated_skills if s['is_hard_skill']]
-        soft = [s for s in validated_skills if not s['is_hard_skill']]
+        # STEP 4: Only use scorable skills for scoring
+        scorable_skills = [s for s in validated_skills if s.get('is_scorable', True)]
         
+        if not scorable_skills:
+            return 0
+        
+        hard = [s for s in scorable_skills if s['is_hard_skill']]
+        soft = [s for s in scorable_skills if not s['is_hard_skill']]
+        
+        # Use confidence-weighted sum
         hard_weighted = sum(s['confidence'] for s in hard)
         soft_weighted = sum(s['confidence'] for s in soft)
         
-        if hard_weighted >= 8:
-            hard_score = 100
-        elif hard_weighted >= 6:
-            hard_score = 85
-        elif hard_weighted >= 4:
-            hard_score = 70
-        elif hard_weighted >= 2:
-            hard_score = 55
-        else:
-            hard_score = hard_weighted * 20
+        # INVARIANT ASSERTION - catch drift
+        assert hard_weighted <= len(hard) * 1.0 + 0.1, f"Hard weighted sum invalid: {hard_weighted}"
         
-        if soft_weighted >= 3:
+        # ADJUSTED THRESHOLDS for confidence-weighted sums (FROZEN)
+        if hard_weighted >= 5.5:
+            hard_score = 100
+        elif hard_weighted >= 4.0:
+            hard_score = 85
+        elif hard_weighted >= 2.5:
+            hard_score = 70
+        elif hard_weighted >= 1.5:
+            hard_score = 55
+        elif hard_weighted >= 0.8:
+            hard_score = 40
+        else:
+            hard_score = hard_weighted * 40
+        
+        if soft_weighted >= 2.0:
             soft_score = 100
-        elif soft_weighted >= 2:
+        elif soft_weighted >= 1.0:
             soft_score = 70
         else:
-            soft_score = soft_weighted * 30
+            soft_score = soft_weighted * 50
         
         return min(100, round((hard_score * hard_weight) + (soft_score * soft_weight), 1))
     
     def calculate_islamic_finance_score(self, edu_data, has_if_exp, validated_skills):
         score = 0
         
-        if edu_data['has_islamic_finance_cert']:
+        if edu_data.get('has_islamic_finance_cert'):
             score += 40
         if has_if_exp:
             score += 35
@@ -1103,7 +1565,11 @@ class ResumeAnalyzer:
         return min(100, score)
 
 
+# ============================================================
+# HELPER FUNCTIONS
+# ============================================================
 def get_or_create_skill_definition(skill_data):
+    """Get or create a SkillDefinition from skill data"""
     cat_obj, _ = SkillCategory.objects.get_or_create(name=skill_data['category'])
     
     skill_def, _ = SkillDefinition.objects.get_or_create(
@@ -1117,8 +1583,11 @@ def get_or_create_skill_definition(skill_data):
     return skill_def
 
 
+# ============================================================
+# MAIN ANALYSIS FUNCTION
+# ============================================================
 def analyze_resume(candidate, job_posting=None, use_ml=True):
-    """Main analysis function - COMPREHENSIVE FIX v2"""
+    """Main analysis function - HYBRID VERSION"""
     analyzer = ResumeAnalyzer()
     
     print(f"\n{'='*60}")
@@ -1133,10 +1602,6 @@ def analyze_resume(candidate, job_posting=None, use_ml=True):
     if not text:
         print("❌ No parsed text")
         return None
-    
-    # Detect CV type
-    is_academic = analyzer.detect_academic_cv(text)
-    print(f"📄 CV Type: {'Academic' if is_academic else 'Industry'}")
     
     # Contact
     print("📞 Contact...")
@@ -1159,8 +1624,6 @@ def analyze_resume(candidate, job_posting=None, use_ml=True):
             print(f" in {deg['field_of_study']}", end='')
         if deg['institution']:
             print(f" from {deg['institution']}", end='')
-        if deg['graduation_year']:
-            print(f" ({deg['graduation_year']})", end='')
         print()
     
     # Experience
@@ -1168,23 +1631,27 @@ def analyze_resume(candidate, job_posting=None, use_ml=True):
     years_exp = analyzer.extract_experience(text)
     has_if_exp = analyzer.check_islamic_finance_exp(text)
     print(f"   Years: {years_exp}")
+    print(f"   Islamic Finance exp: {'Yes' if has_if_exp else 'No'}")
+    
+    # Detect candidate field
+    candidate_field = detect_candidate_field(text, edu_data)
+    analyzer.candidate_field = candidate_field
+    print(f"\n🎯 Detected Field: {candidate_field.upper()}")
     
     # Skills
     print("🔧 Skills...")
     detected = analyzer.detect_skills_regex(text)
     print(f"   Detected (regex): {len(detected)}")
     
-    validated, unvalidated = analyzer.validate_and_classify_skills(detected)
-    print(f"   ✅ Validated (ESCO): {len(validated)}")
+    validated, unvalidated = analyzer.validate_and_classify_skills(detected, candidate_field)
+    print(f"   ✅ Validated & domain-filtered: {len(validated)}")
     print(f"   ⚠️ Unvalidated: {len(unvalidated)}")
     
     if validated:
-        val_names = [s['canonical_name'] for s in validated[:6]]
-        print(f"   Top: {', '.join(val_names)}...")
+        val_names = [s['canonical_name'] for s in validated[:8]]
+        print(f"   Top skills: {', '.join(val_names)}...")
     
     # Scoring
-    print("\n🎯 SCORES:")
-    
     if job_posting:
         edu_w = job_posting.education_weight
         exp_w = job_posting.experience_weight
@@ -1192,9 +1659,11 @@ def analyze_resume(candidate, job_posting=None, use_ml=True):
         if_w = getattr(job_posting, 'islamic_finance_weight', 0.20)
         hard_w = job_posting.hard_skills_weight
         soft_w = job_posting.soft_skills_weight
+        print(f"\n⚙️ Using job posting weights")
     else:
         edu_w, exp_w, skill_w, if_w = 0.25, 0.30, 0.25, 0.20
         hard_w, soft_w = 0.70, 0.30
+        print(f"\n⚙️ Using default weights")
     
     edu_score = analyzer.calculate_education_score(edu_data)
     exp_score = analyzer.calculate_experience_score(years_exp, has_if_exp)
@@ -1208,6 +1677,7 @@ def analyze_resume(candidate, job_posting=None, use_ml=True):
         (if_score * if_w), 1
     )
     
+    print(f"\n🎯 SCORES:")
     print(f"   Education:       {edu_score}/100")
     print(f"   Experience:      {exp_score}/100")
     print(f"   Skills:          {skills_score}/100")
@@ -1224,8 +1694,8 @@ def analyze_resume(candidate, job_posting=None, use_ml=True):
         except:
             pass
     
-    # SAVE
-    print("\n💾 Saving...")
+    # Save
+    print(f"\n💾 Saving...")
     
     candidate.years_experience = years_exp
     candidate.save()
@@ -1241,11 +1711,11 @@ def analyze_resume(candidate, job_posting=None, use_ml=True):
                 institution=deg['institution'] or 'Not specified',
                 field_of_study=deg['field_of_study'] or 'Not specified',
                 graduation_year=deg['graduation_year'],
-                has_islamic_finance_cert=edu_data['has_islamic_finance_cert'],
-                certification_names=edu_data['certification_names']
+                has_islamic_finance_cert=edu_data.get('has_islamic_finance_cert', False),
+                certification_names=edu_data.get('certification_names')
             )
     
-    # Save validated skills only
+    # Save validated skills
     saved_count = 0
     
     for skill in validated:
@@ -1291,5 +1761,6 @@ def analyze_resume(candidate, job_posting=None, use_ml=True):
         'years_experience': years_exp,
         'validated_skills': len(validated),
         'skills_saved': saved_count,
-        'is_academic_cv': is_academic,
+        'is_academic_cv': analyzer.is_academic_cv,
+        'candidate_field': candidate_field,
     }

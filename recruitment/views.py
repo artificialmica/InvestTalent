@@ -4,6 +4,7 @@ from django.db import models
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.http import require_http_methods
 from django.contrib.admin.views.decorators import staff_member_required
+from django.contrib.auth import logout as auth_logout
 from .models import Candidate, Resume, JobPosting, CandidateJobApplication, Score
 from .scoring import analyze_resume
 from .fairness import fairness_analyzer
@@ -57,6 +58,16 @@ def extract_text_from_docx(uploaded_file):
     except Exception as e:
         print(f"Error extracting DOCX: {e}")
         return ""
+
+
+# ============================================
+# LOGOUT VIEW - Works with GET requests
+# ============================================
+def logout_view(request):
+    """Custom logout view that works with GET requests"""
+    auth_logout(request)
+    messages.success(request, 'You have been logged out successfully.')
+    return redirect('dashboard')
 
 
 def upload_resume(request):
@@ -347,6 +358,14 @@ def dashboard(request):
     # Order by score
     candidates = candidates.order_by('-score__total_score')
     
+    # ============================================
+    # FIX: Calculate ranks dynamically for display
+    # ============================================
+    candidates_list = list(candidates[:50])
+    for i, candidate in enumerate(candidates_list, start=1):
+        if hasattr(candidate, 'score') and candidate.score:
+            candidate.score.rank = i
+    
     # Get statistics
     total_candidates = Candidate.objects.count()
     shortlisted_count = Candidate.objects.filter(status='shortlisted').count()
@@ -358,7 +377,7 @@ def dashboard(request):
     status_choices = Candidate._meta.get_field('status').choices
     
     context = {
-        'candidates': candidates[:50],  # Top 50
+        'candidates': candidates_list,  # Use the list with ranks calculated
         'total_candidates': total_candidates,
         'shortlisted_count': shortlisted_count,
         'avg_score': round(avg_score, 1),

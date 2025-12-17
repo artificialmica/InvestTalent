@@ -32,7 +32,6 @@ class RecruitmentAnalytics:
         for status, _ in Candidate.STATUS_CHOICES:
             status_counts[status] = Candidate.objects.filter(status=status).count()
         
-        # Calculate conversion rates
         metrics = {
             'total_applications': total_applications,
             'received': status_counts.get('received', 0),
@@ -43,7 +42,6 @@ class RecruitmentAnalytics:
             'rejected': status_counts.get('rejected', 0)
         }
         
-        # Calculate percentages
         if total_applications > 0:
             metrics['screening_rate'] = round(
                 (metrics['screening'] / total_applications) * 100, 1
@@ -66,12 +64,26 @@ class RecruitmentAnalytics:
     def get_top_skills(self, limit=10):
         """
         Identify most common skills among candidates
+        Uses ExtractedSkill -> SkillDefinition -> SkillCategory
         """
-        skills = Skill.objects.values('skill_name', 'category').annotate(
+        from .models import ExtractedSkill
+        skills = ExtractedSkill.objects.values(
+            'skill__canonical_name', 
+            'skill__category__name'
+        ).annotate(
             count=Count('id')
         ).order_by('-count')[:limit]
         
-        return list(skills)
+        # Rename keys for template compatibility
+        result = []
+        for s in skills:
+            result.append({
+                'skill_name': s['skill__canonical_name'],
+                'category': s['skill__category__name'],
+                'count': s['count']
+            })
+        
+        return result
     
     def get_islamic_finance_penetration(self):
         """
@@ -92,16 +104,16 @@ class RecruitmentAnalytics:
             experience__is_islamic_finance=True
         ).distinct().count()
         
-        # Candidates with IF skills
+        # FIXED: Correct path through ExtractedSkill -> SkillDefinition -> SkillCategory -> name
         if_skills_count = Candidate.objects.filter(
-            skills__category='islamic_finance'
+            extracted_skills__skill__category__name='islamic_finance'
         ).distinct().count()
         
-        # Candidates with any IF background
+        # FIXED: Same fix for the Q filter
         if_any_count = Candidate.objects.filter(
             Q(education__has_islamic_finance_cert=True) |
             Q(experience__is_islamic_finance=True) |
-            Q(skills__category='islamic_finance')
+            Q(extracted_skills__skill__category__name='islamic_finance')
         ).distinct().count()
         
         return {
@@ -110,7 +122,7 @@ class RecruitmentAnalytics:
             'if_experience': if_experience_count,
             'if_skills': if_skills_count,
             'if_any_background': if_any_count,
-            'if_penetration_rate': round((if_any_count / total_candidates) * 100, 1)
+            'if_penetration_rate': round((if_any_count / total_candidates) * 100, 1) if total_candidates > 0 else 0
         }
     
     def get_score_statistics(self):
@@ -132,14 +144,12 @@ class RecruitmentAnalytics:
             avg_if=Avg('islamic_finance_score')
         )
         
-        # Round all values
         for key in stats:
             if stats[key] is not None:
                 stats[key] = round(stats[key], 2)
         
         stats['total_scored'] = scores.count()
         
-        # Score distribution
         stats['distribution'] = {
             'excellent': scores.filter(total_score__gte=80).count(),
             'good': scores.filter(total_score__gte=60, total_score__lt=80).count(),
@@ -159,7 +169,6 @@ class RecruitmentAnalytics:
         
         total = sum(item['count'] for item in education_counts)
         
-        # Add percentages
         for item in education_counts:
             item['percentage'] = round((item['count'] / total) * 100, 1) if total > 0 else 0
         
@@ -186,7 +195,6 @@ class RecruitmentAnalytics:
         
         total = candidates.count()
         
-        # Add percentages
         for key in experience_distribution:
             count = experience_distribution[key]
             experience_distribution[key] = {
@@ -194,7 +202,6 @@ class RecruitmentAnalytics:
                 'percentage': round((count / total) * 100, 1) if total > 0 else 0
             }
         
-        # Average years
         experience_distribution['average_years'] = round(
             candidates.aggregate(Avg('years_experience'))['years_experience__avg'] or 0,
             1
@@ -215,6 +222,12 @@ class RecruitmentAnalytics:
             'experience_analysis': self.get_experience_analysis(),
             'generated_at': datetime.now().isoformat()
         }
+    
+    def generate_comprehensive_report(self):
+        """
+        Generate comprehensive analytics report - called by views.py
+        """
+        return self.generate_executive_summary()
 
 
 # Global analytics instance

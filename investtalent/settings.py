@@ -148,3 +148,8 @@ KEYWORD_STUFFING_THRESHOLD = config('KEYWORD_STUFFING_THRESHOLD', default=0.10, 
 
 # NLP Settings
 SPACY_MODEL = config('SPACY_MODEL', default='en_core_web_sm')
+
+# Login/Logout Settings
+LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/'
+LOGIN_URL = '/login/'

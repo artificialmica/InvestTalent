@@ -17,6 +17,8 @@
             --secondary: #764ba2;
             --success: #28a745;
             --danger: #dc3545;
+            --warning: #ffc107;
+            --info: #17a2b8;
             --light-bg: #f5f7fa;
         }
 
@@ -54,6 +56,7 @@
             display: flex;
             gap: 20px;
             list-style: none;
+            align-items: center;
         }
 
         .nav-links a {
@@ -67,6 +70,83 @@
         .nav-links a:hover,
         .nav-links a.active {
             background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* User Info Styles */
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-left: 20px;
+            padding-left: 20px;
+            border-left: 1px solid rgba(255,255,255,0.3);
+        }
+
+        .user-details {
+            text-align: right;
+        }
+
+        .user-name {
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .user-role {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-top: 3px;
+        }
+
+        .role-hr-admin {
+            background: var(--danger);
+            color: white;
+        }
+
+        .role-hiring-manager {
+            background: var(--warning);
+            color: #333;
+        }
+
+        .role-executive {
+            background: var(--info);
+            color: white;
+        }
+
+        .role-superuser {
+            background: #333;
+            color: white;
+        }
+
+        .logout-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-size: 13px;
+            transition: background 0.3s;
+        }
+
+        .logout-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .login-btn {
+            background: white;
+            color: var(--primary);
+            padding: 8px 20px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 13px;
+            transition: transform 0.2s;
+        }
+
+        .login-btn:hover {
+            transform: scale(1.05);
         }
 
         .messages {
@@ -93,6 +173,18 @@
             border: 1px solid #f5c6cb;
         }
 
+        .alert-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .alert-warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeeba;
+        }
+
         {% block extra_css %}{% endblock %}
     </style>
 </head>
@@ -103,11 +195,61 @@
                 <h1>🎯 InvestTalent-AI</h1>
                 <p>AI-Powered Islamic Finance Recruitment</p>
             </div>
-            <ul class="nav-links">
-                <li><a href="{% url 'upload_resume' %}" {% if request.resolver_match.url_name == 'upload_resume' %}class="active"{% endif %}>Upload</a></li>
-                <li><a href="{% url 'dashboard' %}" {% if request.resolver_match.url_name == 'dashboard' %}class="active"{% endif %}>Dashboard</a></li>
-                <li><a href="/admin/" target="_blank">Admin</a></li>
-            </ul>
+            
+            <div style="display: flex; align-items: center;">
+                <ul class="nav-links">
+                    {% if user.is_authenticated %}
+                        <!-- HR Admin Only: Upload -->
+                        {% if user.is_superuser or user.groups.all.0.name == 'HR Admin' %}
+                        <li><a href="{% url 'upload_resume' %}" {% if request.resolver_match.url_name == 'upload_resume' %}class="active"{% endif %}>📤 Upload</a></li>
+                        {% endif %}
+                        
+                        <!-- All Roles: Dashboard -->
+                        <li><a href="{% url 'dashboard' %}" {% if request.resolver_match.url_name == 'dashboard' %}class="active"{% endif %}>📊 Dashboard</a></li>
+                        
+                        <!-- All Roles: Analytics -->
+                        <li><a href="{% url 'analytics' %}" {% if request.resolver_match.url_name == 'analytics' %}class="active"{% endif %}>📈 Analytics</a></li>
+                        
+                        <!-- HR Admin Only: Jobs -->
+                        {% if user.is_superuser or user.groups.all.0.name == 'HR Admin' %}
+                        <li><a href="{% url 'job_list' %}" {% if request.resolver_match.url_name == 'job_list' %}class="active"{% endif %}>💼 Jobs</a></li>
+                        {% endif %}
+                        
+                        <!-- Admin Link for Superusers -->
+                        {% if user.is_superuser %}
+                        <li><a href="/admin/" target="_blank">⚙️ Admin</a></li>
+                        {% endif %}
+                    {% else %}
+                        <li><a href="{% url 'dashboard' %}">📊 Dashboard</a></li>
+                    {% endif %}
+                </ul>
+                
+                <!-- User Info / Login -->
+                <div class="user-info">
+                    {% if user.is_authenticated %}
+                        <div class="user-details">
+                            <div class="user-name">{{ user.username }}</div>
+                            <span class="user-role 
+                                {% if user.is_superuser %}role-superuser
+                                {% elif user.groups.all.0.name == 'HR Admin' %}role-hr-admin
+                                {% elif user.groups.all.0.name == 'Hiring Manager' %}role-hiring-manager
+                                {% elif user.groups.all.0.name == 'Executive' %}role-executive
+                                {% endif %}">
+                                {% if user.is_superuser %}
+                                    Superuser
+                                {% elif user.groups.all.0.name %}
+                                    {{ user.groups.all.0.name }}
+                                {% else %}
+                                    User
+                                {% endif %}
+                            </span>
+                        </div>
+                        <a href="{% url 'logout' %}" class="logout-btn">Logout</a>
+                    {% else %}
+                        <a href="{% url 'login' %}" class="login-btn">Login</a>
+                    {% endif %}
+                </div>
+            </div>
         </div>
     </div>
 

@@ -569,6 +569,20 @@
             gap: 15px;
         }
         
+        /* RBAC User Info Styles */
+        .user-role-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        
+        .role-hr-admin { background: #dc3545; color: white; }
+        .role-hiring-manager { background: #ffc107; color: #333; }
+        .role-executive { background: #17a2b8; color: white; }
+        .role-superuser { background: #333; color: white; }
+        
         @media (max-width: 768px) {
             .weights-grid {
                 grid-template-columns: 1fr;
@@ -580,23 +594,66 @@
     </style>
 </head>
 <body>
+    <!-- NAVBAR WITH RBAC -->
     <div class="navbar">
-        <h1>🎯 InvestTalent-AI Dashboard</h1>
-        <p>AI-Powered Recruitment System for Arcapita Investment Holdings</p>
-        <div class="nav-links" style="margin-top: 15px;">
-            <a href="{% url 'dashboard' %}" style="color: white; text-decoration: none; margin-right: 20px; font-weight: bold;">📋 Candidates</a>
-            <a href="{% url 'job_list' %}" style="color: white; text-decoration: none; margin-right: 20px; opacity: 0.9;">💼 Job Postings</a>
-            <a href="{% url 'analytics' %}" style="color: white; text-decoration: none; margin-right: 20px; opacity: 0.9;">📊 Analytics</a>
-            <a href="{% url 'fairness_report' %}" style="color: white; text-decoration: none; margin-right: 20px; opacity: 0.9;">⚖️ Fairness</a>
+        <div style="display: flex; justify-content: space-between; align-items: center; max-width: 1400px; margin: 0 auto;">
+            <div>
+                <h1>🎯 InvestTalent-AI Dashboard</h1>
+                <p>AI-Powered Recruitment System for Arcapita Investment Holdings</p>
+            </div>
+            
+            <div style="display: flex; align-items: center; gap: 20px;">
+                <!-- Navigation Links -->
+                <div class="nav-links" style="display: flex; gap: 15px;">
+                    <a href="{% url 'dashboard' %}" style="color: white; text-decoration: none; font-weight: bold; padding: 8px 12px; background: rgba(255,255,255,0.2); border-radius: 5px;">📋 Candidates</a>
+                    
+                    {% if user.is_authenticated %}
+                        {% if user.is_superuser or user.groups.all.0.name == 'HR Admin' %}
+                        <a href="{% url 'job_list' %}" style="color: white; text-decoration: none; opacity: 0.9; padding: 8px 12px;">💼 Jobs</a>
+                        {% endif %}
+                        <a href="{% url 'analytics' %}" style="color: white; text-decoration: none; opacity: 0.9; padding: 8px 12px;">📊 Analytics</a>
+                        <a href="{% url 'fairness_report' %}" style="color: white; text-decoration: none; opacity: 0.9; padding: 8px 12px;">⚖️ Fairness</a>
+                    {% endif %}
+                </div>
+                
+                <!-- User Info -->
+                <div style="display: flex; align-items: center; gap: 15px; padding-left: 20px; border-left: 1px solid rgba(255,255,255,0.3);">
+                    {% if user.is_authenticated %}
+                        <div style="text-align: right;">
+                            <div style="font-weight: 600; font-size: 14px;">{{ user.username }}</div>
+                            <span class="user-role-badge 
+                                {% if user.is_superuser %}role-superuser
+                                {% elif user.groups.all.0.name == 'HR Admin' %}role-hr-admin
+                                {% elif user.groups.all.0.name == 'Hiring Manager' %}role-hiring-manager
+                                {% elif user.groups.all.0.name == 'Executive' %}role-executive
+                                {% endif %}">
+                                {% if user.is_superuser %}Superuser
+                                {% elif user.groups.all.0.name %}{{ user.groups.all.0.name }}
+                                {% else %}User{% endif %}
+                            </span>
+                        </div>
+                        <a href="{% url 'logout' %}" style="background: rgba(255,255,255,0.2); color: white; padding: 8px 16px; border-radius: 5px; text-decoration: none; font-size: 13px;">Logout</a>
+                    {% else %}
+                        <a href="{% url 'login' %}" style="background: white; color: #667eea; padding: 8px 20px; border-radius: 5px; text-decoration: none; font-weight: 600; font-size: 13px;">Login</a>
+                    {% endif %}
+                </div>
+            </div>
         </div>
     </div>
     
     <div class="container">
-        <!-- Top Action Buttons -->
+        <!-- Top Action Buttons - RBAC CONTROLLED -->
         <div class="top-actions">
-            <a href="{% url 'upload_resume' %}" class="btn btn-upload">➕ Upload New Resume</a>
-            <a href="{% url 'job_list' %}" class="btn btn-primary" style="background: #28a745;">💼 Job Postings</a>
-            <a href="{% url 'analytics' %}" class="btn btn-analytics">📊 Analytics</a>
+            {% if user.is_authenticated %}
+                {% if user.is_superuser or user.groups.all.0.name == 'HR Admin' %}
+                    <a href="{% url 'upload_resume' %}" class="btn btn-upload">➕ Upload New Resume</a>
+                    <a href="{% url 'job_list' %}" class="btn btn-primary" style="background: #28a745;">💼 Job Postings</a>
+                {% endif %}
+                <a href="{% url 'analytics' %}" class="btn btn-analytics">📊 Analytics</a>
+            {% else %}
+                <a href="{% url 'login' %}" class="btn btn-primary">🔐 Login to Upload CVs</a>
+                <a href="{% url 'analytics' %}" class="btn btn-analytics">📊 Analytics</a>
+            {% endif %}
         </div>
         
         <!-- Statistics Cards -->
@@ -628,7 +685,8 @@
             </div>
         </div>
         
-        <!-- Weight Sliders Panel -->
+        <!-- Weight Sliders Panel - HR Admin Only -->
+        {% if user.is_authenticated and user.is_superuser or user.groups.all.0.name == 'HR Admin' %}
         <div class="weights-panel">
             <div class="weights-header">
                 <h3>⚖️ Scoring Weight Configuration</h3>
@@ -746,6 +804,7 @@
                 </div>
             </div>
         </div>
+        {% endif %}
         
         <!-- Filters -->
         <div class="filters">
@@ -852,7 +911,11 @@
             <div class="empty-state">
                 <h3>No candidates found</h3>
                 <p>Upload your first resume to get started!</p>
+                {% if user.is_authenticated and user.is_superuser or user.groups.all.0.name == 'HR Admin' %}
                 <a href="{% url 'upload_resume' %}" class="btn btn-primary" style="margin-top: 20px;">Upload Resume</a>
+                {% else %}
+                <a href="{% url 'login' %}" class="btn btn-primary" style="margin-top: 20px;">Login to Upload</a>
+                {% endif %}
             </div>
             {% endif %}
         </div>
@@ -956,6 +1019,9 @@
         }
         
         function updateUI() {
+            // Check if sliders exist before updating
+            if (!document.getElementById('eduSlider')) return;
+            
             // Update slider positions
             document.getElementById('eduSlider').value = weights.education;
             document.getElementById('expSlider').value = weights.experience;

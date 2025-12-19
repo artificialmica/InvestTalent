@@ -1,32 +1,37 @@
 """
-Analytics Module
-Provides advanced analytics and reporting for recruitment system
-Generates insights, trends, and predictive metrics
+Analytics Module - F11 DIVERSITY METRICS (Self-Reported, PDPL-Compliant)
+
+IMPORTANT: Diversity data is collected via OPTIONAL self-reported fields.
+NO inference from names or CV content is performed.
+
+This design aligns with:
+- GDPR Art. 5(1)(c) - Data minimization
+- Bahrain PDPL principles
+- Industry best practices (Workday, Greenhouse, Lever)
+
+References:
+- Santamaria & Mihaljevic (2018): Name-based gender inference is unreliable
+- Karimi et al. (2016): Cultural variation significantly reduces inference accuracy
 """
 
-from .models import Candidate, Score, Skill, Education, Experience
+from .models import Candidate, Score, Skill, Education, Experience, ExtractedSkill
 from django.db.models import Avg, Count, Q, Max, Min
-from datetime import datetime, timedelta
-import json
+from datetime import datetime
+from collections import Counter
 
 
 class RecruitmentAnalytics:
     """
-    Advanced analytics for recruitment data
-    Provides insights on hiring trends, skill demands, and success patterns
+    Advanced analytics for recruitment data.
+    Diversity metrics use SELF-REPORTED data only (not inference).
     """
     
     def get_hiring_funnel_metrics(self):
-        """
-        Calculate conversion rates through hiring funnel
-        """
+        """Calculate conversion rates through hiring funnel"""
         total_applications = Candidate.objects.count()
         
         if total_applications == 0:
-            return {
-                'status': 'no_data',
-                'message': 'No candidates in system'
-            }
+            return {'status': 'no_data', 'message': 'No candidates in system'}
         
         status_counts = {}
         for status, _ in Candidate.STATUS_CHOICES:
@@ -43,30 +48,16 @@ class RecruitmentAnalytics:
         }
         
         if total_applications > 0:
-            metrics['screening_rate'] = round(
-                (metrics['screening'] / total_applications) * 100, 1
-            )
-            metrics['interview_rate'] = round(
-                (metrics['interview'] / total_applications) * 100, 1
-            )
-            metrics['offer_rate'] = round(
-                (metrics['offered'] / total_applications) * 100, 1
-            )
-            metrics['hire_rate'] = round(
-                (metrics['hired'] / total_applications) * 100, 1
-            )
-            metrics['rejection_rate'] = round(
-                (metrics['rejected'] / total_applications) * 100, 1
-            )
+            metrics['screening_rate'] = round((metrics['screening'] / total_applications) * 100, 1)
+            metrics['interview_rate'] = round((metrics['interview'] / total_applications) * 100, 1)
+            metrics['offer_rate'] = round((metrics['offered'] / total_applications) * 100, 1)
+            metrics['hire_rate'] = round((metrics['hired'] / total_applications) * 100, 1)
+            metrics['rejection_rate'] = round((metrics['rejected'] / total_applications) * 100, 1)
         
         return metrics
     
     def get_top_skills(self, limit=10):
-        """
-        Identify most common skills among candidates
-        Uses ExtractedSkill -> SkillDefinition -> SkillCategory
-        """
-        from .models import ExtractedSkill
+        """Identify most common skills among candidates"""
         skills = ExtractedSkill.objects.values(
             'skill__canonical_name', 
             'skill__category__name'
@@ -74,7 +65,6 @@ class RecruitmentAnalytics:
             count=Count('id')
         ).order_by('-count')[:limit]
         
-        # Rename keys for template compatibility
         result = []
         for s in skills:
             result.append({
@@ -86,30 +76,24 @@ class RecruitmentAnalytics:
         return result
     
     def get_islamic_finance_penetration(self):
-        """
-        Analyze Islamic Finance expertise across candidate pool
-        """
+        """Analyze Islamic Finance expertise across candidate pool"""
         total_candidates = Candidate.objects.count()
         
         if total_candidates == 0:
             return {'status': 'no_data'}
         
-        # Candidates with IF education
         if_education_count = Candidate.objects.filter(
             education__has_islamic_finance_cert=True
         ).distinct().count()
         
-        # Candidates with IF experience
         if_experience_count = Candidate.objects.filter(
             experience__is_islamic_finance=True
         ).distinct().count()
         
-        # FIXED: Correct path through ExtractedSkill -> SkillDefinition -> SkillCategory -> name
         if_skills_count = Candidate.objects.filter(
             extracted_skills__skill__category__name='islamic_finance'
         ).distinct().count()
         
-        # FIXED: Same fix for the Q filter
         if_any_count = Candidate.objects.filter(
             Q(education__has_islamic_finance_cert=True) |
             Q(experience__is_islamic_finance=True) |
@@ -126,9 +110,7 @@ class RecruitmentAnalytics:
         }
     
     def get_score_statistics(self):
-        """
-        Calculate comprehensive scoring statistics
-        """
+        """Calculate comprehensive scoring statistics"""
         scores = Score.objects.all()
         
         if not scores.exists():
@@ -149,7 +131,6 @@ class RecruitmentAnalytics:
                 stats[key] = round(stats[key], 2)
         
         stats['total_scored'] = scores.count()
-        
         stats['distribution'] = {
             'excellent': scores.filter(total_score__gte=80).count(),
             'good': scores.filter(total_score__gte=60, total_score__lt=80).count(),
@@ -160,9 +141,7 @@ class RecruitmentAnalytics:
         return stats
     
     def get_education_analysis(self):
-        """
-        Analyze education levels in candidate pool
-        """
+        """Analyze education levels in candidate pool"""
         education_counts = Education.objects.values('degree').annotate(
             count=Count('id')
         ).order_by('-count')
@@ -178,9 +157,7 @@ class RecruitmentAnalytics:
         }
     
     def get_experience_analysis(self):
-        """
-        Analyze years of experience distribution
-        """
+        """Analyze years of experience distribution"""
         candidates = Candidate.objects.all()
         
         if not candidates.exists():
@@ -203,16 +180,134 @@ class RecruitmentAnalytics:
             }
         
         experience_distribution['average_years'] = round(
-            candidates.aggregate(Avg('years_experience'))['years_experience__avg'] or 0,
-            1
+            candidates.aggregate(Avg('years_experience'))['years_experience__avg'] or 0, 1
         )
         
         return experience_distribution
     
+    # ============================================================
+    # F11: DIVERSITY METRICS (SELF-REPORTED, NOT INFERRED)
+    # ============================================================
+    def get_diversity_metrics(self):
+        """
+        Calculate diversity metrics using SELF-REPORTED data only.
+        
+        IMPORTANT: This method does NOT infer gender or nationality from
+        names or CV content. It only reports what candidates voluntarily
+        disclosed via optional form fields.
+        
+        This design choice is based on:
+        1. Research showing name-based inference fails across cultures
+           (Santamaria & Mihaljevic, 2018; Karimi et al., 2016)
+        2. GDPR/PDPL data minimization principles
+        3. Industry best practices (Workday, Greenhouse, Lever)
+        
+        The data is NEVER used for scoring or ranking decisions.
+        """
+        candidates = Candidate.objects.all()
+        
+        if not candidates.exists():
+            return {'status': 'no_data', 'message': 'No candidates in system'}
+        
+        total = candidates.count()
+        
+        def calc_pct(count):
+            return round((count / total) * 100, 1) if total > 0 else 0
+        
+        # Count self-reported gender
+        gender_counts = Counter()
+        for c in candidates:
+            gender = getattr(c, 'gender', '') or ''
+            if gender == '':
+                gender = 'not_disclosed'
+            gender_counts[gender] += 1
+        
+        # Count self-reported nationality
+        nationality_counts = Counter()
+        for c in candidates:
+            nationality = getattr(c, 'nationality', '') or ''
+            if nationality == '':
+                nationality = 'not_disclosed'
+            nationality_counts[nationality] += 1
+        
+        # Calculate disclosure rates
+        gender_disclosed = total - gender_counts.get('not_disclosed', 0)
+        nationality_disclosed = total - nationality_counts.get('not_disclosed', 0)
+        
+        return {
+            'status': 'ok',
+            'total_candidates': total,
+            'data_source': 'self_reported',
+            'gender_distribution': {
+                'male': {
+                    'count': gender_counts.get('male', 0),
+                    'percentage': calc_pct(gender_counts.get('male', 0))
+                },
+                'female': {
+                    'count': gender_counts.get('female', 0),
+                    'percentage': calc_pct(gender_counts.get('female', 0))
+                },
+                'non_binary': {
+                    'count': gender_counts.get('non_binary', 0),
+                    'percentage': calc_pct(gender_counts.get('non_binary', 0))
+                },
+                'other': {
+                    'count': gender_counts.get('other', 0),
+                    'percentage': calc_pct(gender_counts.get('other', 0))
+                },
+                'not_disclosed': {
+                    'count': gender_counts.get('not_disclosed', 0),
+                    'percentage': calc_pct(gender_counts.get('not_disclosed', 0))
+                }
+            },
+            'nationality_distribution': {
+                'bahraini': {
+                    'count': nationality_counts.get('bahraini', 0),
+                    'percentage': calc_pct(nationality_counts.get('bahraini', 0)),
+                    'label': 'Bahraini'
+                },
+                'gcc': {
+                    'count': nationality_counts.get('gcc', 0),
+                    'percentage': calc_pct(nationality_counts.get('gcc', 0)),
+                    'label': 'GCC National'
+                },
+                'south_asian': {
+                    'count': nationality_counts.get('south_asian', 0),
+                    'percentage': calc_pct(nationality_counts.get('south_asian', 0)),
+                    'label': 'South Asian'
+                },
+                'middle_eastern': {
+                    'count': nationality_counts.get('middle_eastern', 0),
+                    'percentage': calc_pct(nationality_counts.get('middle_eastern', 0)),
+                    'label': 'Middle Eastern'
+                },
+                'western': {
+                    'count': nationality_counts.get('western', 0),
+                    'percentage': calc_pct(nationality_counts.get('western', 0)),
+                    'label': 'Western'
+                },
+                'other': {
+                    'count': nationality_counts.get('other', 0),
+                    'percentage': calc_pct(nationality_counts.get('other', 0)),
+                    'label': 'Other'
+                },
+                'not_disclosed': {
+                    'count': nationality_counts.get('not_disclosed', 0),
+                    'percentage': calc_pct(nationality_counts.get('not_disclosed', 0)),
+                    'label': 'Not Disclosed'
+                }
+            },
+            'disclosure_rates': {
+                'gender': calc_pct(gender_disclosed),
+                'nationality': calc_pct(nationality_disclosed)
+            },
+            'notice': 'All diversity data is voluntarily self-reported by candidates. '
+                      'This information is used for aggregate analytics only and is '
+                      'explicitly excluded from scoring and ranking decisions.'
+        }
+    
     def generate_executive_summary(self):
-        """
-        Generate executive summary dashboard
-        """
+        """Generate executive summary dashboard"""
         return {
             'hiring_funnel': self.get_hiring_funnel_metrics(),
             'score_statistics': self.get_score_statistics(),
@@ -220,13 +315,12 @@ class RecruitmentAnalytics:
             'top_skills': self.get_top_skills(limit=5),
             'education_analysis': self.get_education_analysis(),
             'experience_analysis': self.get_experience_analysis(),
+            'diversity_metrics': self.get_diversity_metrics(),
             'generated_at': datetime.now().isoformat()
         }
     
     def generate_comprehensive_report(self):
-        """
-        Generate comprehensive analytics report - called by views.py
-        """
+        """Generate comprehensive analytics report - called by views.py"""
         return self.generate_executive_summary()
 
 

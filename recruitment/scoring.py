@@ -899,27 +899,88 @@ class ResumeAnalyzer:
         return False
     
     def _extract_section(self, text, section_type):
-        """Extract a specific section from CV - FROM OLD CODE (robust)"""
+        """
+        Extract a specific section from CV - EUROPASS-OPTIMIZED VERSION
+        
+        Priority 1: Europass standard headers
+        Priority 2: Common CV headers
+        Priority 3: Variant headers
+        """
         lines = text.split('\n')
         in_section = False
         section_lines = []
         
+        # EUROPASS-ALIGNED HEADERS (priority order)
         headers = {
-            'education': ['education', 'academic background', 'qualifications', 'academic qualifications'],
-            'employment': ['employment', 'work experience', 'professional experience',
-                          'employment history', 'career history', 'work history', 'experience',
-                          'professional background', 'career summary'],
-            'academic_appointments': ['academic appointments', 'academic positions', 'teaching positions'],
-            'teaching': ['teaching and research', 'teaching experience', 'research experience'],
-            'certifications': ['certification', 'certificate', 'licenses'],
-            'skills': ['skills', 'competencies', 'expertise', 'technical skills', 'key competencies'],
+            'education': [
+                # Europass PRIMARY
+                'education and training',
+                # Common variants
+                'education', 'academic background', 'qualifications', 
+                'academic qualifications', 'educational background',
+                'academic history', 'studies'
+            ],
+            'employment': [
+                # Europass PRIMARY
+                'work experience',
+                # Common variants
+                'employment', 'professional experience', 'employment history', 
+                'career history', 'work history', 'experience',
+                'professional background', 'career summary', 'career'
+            ],
+            'academic_appointments': [
+                'academic appointments', 'academic positions', 'teaching positions',
+                'faculty positions', 'research positions'
+            ],
+            'teaching': [
+                'teaching and research', 'teaching experience', 'research experience'
+            ],
+            'certifications': [
+                # Europass: part of Additional Information
+                'certifications', 'certification', 'certificates', 'licenses',
+                'professional certifications', 'accreditations'
+            ],
+            'skills': [
+                # Europass PRIMARY
+                'personal skills',
+                # Europass sub-sections
+                'digital competence', 'communication skills', 
+                'organisational skills', 'organizational skills',
+                'job-related skills', 'other skills',
+                # Common variants  
+                'skills', 'competencies', 'expertise', 'technical skills', 
+                'key competencies', 'core competencies', 'key skills',
+                'professional skills', 'it skills', 'computer skills',
+                # Finance-specific
+                'financial skills', 'compliance skills', 'technical skills'
+            ],
+            'languages': [
+                # Europass PRIMARY
+                'mother tongue', 'other languages',
+                # Common variants
+                'languages', 'language skills', 'language proficiency'
+            ],
+            'additional': [
+                # Europass PRIMARY
+                'additional information',
+                # Sub-sections
+                'publications', 'presentations', 'projects', 'conferences',
+                'seminars', 'honours and awards', 'honors and awards',
+                'memberships', 'references', 'citations', 'courses'
+            ],
         }
         
         start_markers = headers.get(section_type, [section_type])
-        end_markers = ['education', 'skills', 'certifications', 'publications',
-                       'references', 'awards', 'languages', 'honors', 'memberships',
-                       'training', 'research projects', 'key achievements', 'students supervised',
-                       'additional information', 'interests', 'hobbies']
+        
+        # End markers - stop when we hit another major section
+        end_markers = [
+            'education', 'education and training', 'skills', 'personal skills',
+            'certifications', 'publications', 'references', 'awards', 
+            'languages', 'honors', 'honours', 'memberships', 'training', 
+            'research projects', 'key achievements', 'students supervised',
+            'additional information', 'interests', 'hobbies', 'annexes',
+            'work experience', 'employment'
+        ]
         
         end_markers = [m for m in end_markers if m not in start_markers]
         
@@ -1140,6 +1201,120 @@ class ResumeAnalyzer:
         else:
             return {'name': degree_text, 'level': 'other', 'rank': 0}
     
+    def extract_languages(self, text):
+        """
+        EUROPASS-COMPLIANT Language Extraction
+        ======================================
+        
+        Extracts language proficiency using CEFR levels (A1-C2) or 
+        common descriptors (Native, Fluent, Intermediate, Basic).
+        
+        Valuable for Arcapita: Arabic, English essential; French, Urdu common.
+        
+        Returns:
+            dict: {
+                'languages': [{'name': 'English', 'level': 'Native', 'cefr': 'C2'}, ...],
+                'has_arabic': bool,
+                'has_english': bool,
+                'language_count': int
+            }
+        """
+        languages = []
+        text_lower = text.lower()
+        
+        # Try to find the Languages section first
+        lang_section = self._extract_section(text, 'languages')
+        search_text = lang_section if lang_section else text
+        search_lower = search_text.lower()
+        
+        # CEFR level mapping
+        cefr_map = {
+            'a1': 'A1 (Beginner)',
+            'a2': 'A2 (Elementary)', 
+            'b1': 'B1 (Intermediate)',
+            'b2': 'B2 (Upper Intermediate)',
+            'c1': 'C1 (Advanced)',
+            'c2': 'C2 (Proficient)',
+        }
+        
+        # Common proficiency descriptors → CEFR equivalent
+        level_to_cefr = {
+            'native': 'C2',
+            'mother tongue': 'C2',
+            'fluent': 'C1',
+            'proficient': 'C1',
+            'advanced': 'C1',
+            'upper intermediate': 'B2',
+            'intermediate': 'B1',
+            'conversational': 'B1',
+            'elementary': 'A2',
+            'basic': 'A1',
+            'beginner': 'A1',
+        }
+        
+        # Languages commonly found in GCC/Finance CVs
+        target_languages = [
+            'english', 'arabic', 'french', 'urdu', 'hindi', 
+            'german', 'spanish', 'mandarin', 'chinese',
+            'japanese', 'korean', 'portuguese', 'italian',
+            'russian', 'turkish', 'persian', 'farsi', 'bengali',
+            'tagalog', 'filipino', 'malayalam', 'tamil'
+        ]
+        
+        # Pattern 1: "Language: Level" or "Language - Level"
+        for lang in target_languages:
+            # Match "English: Native" or "English - Fluent" or "English (Native)"
+            pattern = rf'\b{lang}\b[\s:–\-\(]*\s*(native|mother\s*tongue|fluent|proficient|advanced|intermediate|basic|beginner|a[12]|b[12]|c[12])'
+            match = re.search(pattern, search_lower)
+            
+            if match:
+                level_text = match.group(1).strip().lower()
+                
+                # Determine CEFR level
+                if level_text in ['a1', 'a2', 'b1', 'b2', 'c1', 'c2']:
+                    cefr = level_text.upper()
+                    level_desc = cefr_map.get(level_text, level_text.upper())
+                else:
+                    cefr = level_to_cefr.get(level_text, 'B1')
+                    level_desc = level_text.title()
+                
+                languages.append({
+                    'name': lang.title(),
+                    'level': level_desc,
+                    'cefr': cefr
+                })
+            elif lang in search_lower:
+                # Language mentioned but no level - assume at least intermediate
+                languages.append({
+                    'name': lang.title(),
+                    'level': 'Not specified',
+                    'cefr': 'B1'  # Conservative assumption
+                })
+        
+        # Check for key languages
+        has_arabic = any(l['name'].lower() == 'arabic' for l in languages)
+        has_english = any(l['name'].lower() == 'english' for l in languages)
+        
+        # If no English detected but CV is in English, assume proficiency
+        if not has_english and len(text) > 500:
+            languages.append({
+                'name': 'English',
+                'level': 'Proficient (CV language)',
+                'cefr': 'C1'
+            })
+            has_english = True
+        
+        print(f"   🌍 Languages: {len(languages)} detected")
+        for lang in languages[:4]:
+            print(f"      - {lang['name']}: {lang['level']}")
+        
+        return {
+            'languages': languages,
+            'has_arabic': has_arabic,
+            'has_english': has_english,
+            'language_count': len(languages)
+        }
+    
     def extract_experience(self, text):
         """
         HYBRID Experience Extraction
@@ -1242,8 +1417,7 @@ class ResumeAnalyzer:
             if section_text and len(section_text.strip()) > 50:
                 print(f"   ✓ Found {section_type} section")
                 
-                section_lines = section_text.split('\n')
-                for idx, line in enumerate(section_lines):
+                for line in section_text.split('\n'):
                     line_lower = line.lower().strip()
                     if not line_lower or len(line_lower) < 10:
                         continue
@@ -1258,21 +1432,8 @@ class ResumeAnalyzer:
                     
                     description = line[:60].strip() + ('...' if len(line) > 60 else '')
                     
-                    # GATE 1: Education check - CHECK NEXT 2 LINES FOR CONTEXT
-                    # FIX: Handles CVs where date is on one line, "University/Bachelor" on next
-                    context_text = line_lower
-                    for j in range(1, 3):
-                        if idx + j < len(section_lines):
-                            context_text += ' ' + section_lines[idx + j].lower().strip()
-                    
-                    # Strong education indicators (the candidate's OWN education)
-                    strong_edu_keywords = ['bachelor', 'master', 'gpa', 'cgpa']
-                    has_strong_edu = any(edu in context_text for edu in strong_edu_keywords)
-                    has_institution = 'university' in context_text or 'college' in context_text
-                    
-                    # Education if: (strong_edu_keyword) AND (university/college) together
-                    is_education = has_strong_edu and has_institution
-                    
+                    # GATE 1: Education check
+                    is_education = any(edu in line_lower for edu in education_keywords)
                     if is_education:
                         skipped_roles.append(f"EDUCATION: {description}")
                         continue
@@ -1323,8 +1484,7 @@ class ResumeAnalyzer:
         if not all_dates:
             print(f"   ⚠️ No section found - using line-by-line fallback")
             
-            lines = normalized_text.split('\n')
-            for idx, line in enumerate(lines):
+            for line in normalized_text.split('\n'):
                 line_lower = line.lower().strip()
                 if not line_lower or len(line_lower) < 10:
                     continue
@@ -1338,21 +1498,8 @@ class ResumeAnalyzer:
                 
                 description = line[:60].strip() + ('...' if len(line) > 60 else '')
                 
-                # Skip education - CHECK NEXT 2 LINES FOR CONTEXT
-                # FIX: Handles CVs where date is on one line, "University/Bachelor" on next
-                context_text = line_lower
-                for j in range(1, 3):
-                    if idx + j < len(lines):
-                        context_text += ' ' + lines[idx + j].lower().strip()
-                
-                # Strong education indicators (the candidate's OWN education)
-                strong_edu_keywords = ['bachelor', 'master', 'gpa', 'cgpa']
-                has_strong_edu = any(edu in context_text for edu in strong_edu_keywords)
-                has_institution = 'university' in context_text or 'college' in context_text
-                
-                # Education if: (strong_edu_keyword) AND (university/college) together
-                is_education = has_strong_edu and has_institution
-                
+                # Skip education
+                is_education = any(edu in line_lower for edu in education_keywords)
                 if is_education:
                     skipped_roles.append(f"EDUCATION: {description}")
                     continue
@@ -1458,12 +1605,15 @@ class ResumeAnalyzer:
     
     def detect_skills_regex(self, text, normalized_text=None):
         """
-        Detect skills using regex patterns - SECTION-AWARE with SOURCE TRACKING
+        Detect skills using HYBRID approach:
         
-        STEP 1: Track where each skill was found (provenance)
-        - Skills section: weight 1.0
-        - Near job titles: weight 0.7
-        - Inline/other: weight 0.3
+        PASS 0 (NEW): List-based extraction from Skills section (highest trust)
+        PASS 1: Regex patterns in Skills section
+        PASS 2: Regex patterns in Employment section  
+        PASS 3: Regex patterns in full CV (fallback)
+        
+        This captures delimiter-separated skills like:
+        "JavaScript · React · Node.js · Go · C · HTML · CSS · SQL"
         """
         # Try to extract skills section first
         skill_section = self._extract_section(text, 'skills')
@@ -1472,7 +1622,68 @@ class ResumeAnalyzer:
         detected = []
         skill_sources = {}  # Track where each skill was found
         
-        # PASS 1: Check Skills section (highest weight)
+        # ================================================================
+        # PASS 0 (NEW): List-based skill extraction from Skills section
+        # This catches delimiter-separated skills that regex misses
+        # ================================================================
+        if skill_section and len(skill_section.strip()) > 20:
+            # Preprocess: Remove common section sub-headers
+            processed_section = skill_section
+            sub_headers = [
+                r'FINANCIAL\s*&?\s*STRATEGIC\s*SKILLS?',
+                r'COMPLIANCE\s*&?\s*RISK',
+                r'TECHNICAL\s*SKILLS?',
+                r'SOFT\s*SKILLS?',
+                r'HARD\s*SKILLS?',
+                r'KEY\s*COMPETENC',
+                r'CORE\s*COMPETENC',
+                r'PROFESSIONAL\s*SKILLS?',
+                r'IT\s*SKILLS?',
+                r'COMPUTER\s*SKILLS?',
+                r'DIGITAL\s*COMPETENC',
+            ]
+            for header in sub_headers:
+                processed_section = re.sub(header, ' ', processed_section, flags=re.IGNORECASE)
+            
+            # Normalize line breaks - join lines that were split mid-skill
+            processed_section = re.sub(r'\s*\n\s*', ' ', processed_section)
+            processed_section = re.sub(r'  +', ' ', processed_section)
+            
+            # Split on middle dot (·) - primary Europass/modern CV delimiter
+            raw_tokens = re.split(r'\s*[·•]\s*', processed_section)
+            
+            for skill_token in raw_tokens:
+                skill_token = skill_token.strip()
+                
+                # Clean up common prefixes/suffixes
+                skill_token = re.sub(r'^[-–—]\s*', '', skill_token)
+                skill_token = re.sub(r'\s*[-–—]$', '', skill_token)
+                
+                # Valid skill: 1-50 chars
+                if 1 <= len(skill_token) <= 50:
+                    # Skip if ALL CAPS and long (likely a header that slipped through)
+                    if skill_token.isupper() and len(skill_token) > 10:
+                        continue
+                    
+                    # Skip generic single words that aren't skills
+                    skip_words = ['skills', 'competencies', 'experience', 'summary',
+                                  'education', 'languages', 'interests', 'references']
+                    if skill_token.lower() in skip_words:
+                        continue
+                    
+                    skill_lower = skill_token.lower()
+                    if skill_lower not in skill_sources:
+                        skill_sources[skill_lower] = {
+                            'source': 'skills_section_list',
+                            'weight': 1.0,
+                            'frequency': 1,
+                            'raw_name': skill_token  # Preserve original case
+                        }
+            
+            if skill_sources:
+                print(f"   📋 List extraction: {len(skill_sources)} potential skills from delimiters")
+        
+        # PASS 1: Check Skills section with regex (highest weight)
         if skill_section and len(skill_section.strip()) > 50:
             skill_section_lower = skill_section.lower()
             print(f"   📋 Skills section found ({len(skill_section)} chars)")
@@ -1518,8 +1729,10 @@ class ResumeAnalyzer:
         
         # Build detected list with source info
         for skill_name, source_info in skill_sources.items():
+            # Use preserved raw_name if available (from list extraction), else use skill_name
+            raw_name = source_info.get('raw_name', skill_name)
             detected.append({
-                'raw_name': skill_name,
+                'raw_name': raw_name,
                 'source': source_info['source'],
                 'source_weight': source_info['weight'],
                 'frequency': source_info['frequency']
@@ -1541,7 +1754,65 @@ class ResumeAnalyzer:
         unvalidated = []
         filtered_out = []
         
+        # ============================================================
+        # GARBAGE FILTER - catches raw CV text chunks before ESCO
+        # ============================================================
+        def is_garbage_skill(raw_name):
+            """Filter out obvious garbage before ESCO validation"""
+            if not raw_name or len(raw_name) < 2:
+                return True
+            
+            # Too long = likely a sentence fragment
+            if len(raw_name) > 50:
+                return True
+            
+            # Too many words = likely a phrase, not a skill
+            word_count = len(raw_name.split())
+            if word_count > 5:
+                return True
+            
+            # Contains dates = CV text
+            if re.search(r'\d{2}/\d{4}|\d{4}\s*[-–]\s*\d{4}', raw_name):
+                return True
+            
+            # Contains money amounts = CV text
+            if re.search(r'\$[\d,]+[MKB]?|\d+\s*million', raw_name, re.IGNORECASE):
+                return True
+            
+            # Contains percentage = likely achievement text
+            if re.search(r'\d+%', raw_name):
+                return True
+            
+            # Contains company names / locations
+            company_patterns = ['binance', 'manama', 'bahrain', 'globally', 'regional', 'national airline']
+            if any(p in raw_name.lower() for p in company_patterns):
+                return True
+            
+            # Contains job titles (as whole words)
+            job_titles = [r'\bceo\b', r'\bcto\b', r'\bcfo\b', r'\bthe ceo\b', r'\bthe cto\b']
+            if any(re.search(t, raw_name.lower()) for t in job_titles):
+                return True
+            
+            # Sentence-like patterns (ends with period)
+            if raw_name.endswith('.'):
+                return True
+            
+            # Multiple capitalized words in a row suggesting Title Case sentence
+            caps_words = re.findall(r'\b[A-Z][a-z]+\b', raw_name)
+            if len(caps_words) >= 4:
+                return True
+            
+            return False
+        
         for skill in detected_skills:
+            # ============================================================
+            # FIRST-LINE GARBAGE CHECK - Before ESCO even sees it
+            # ============================================================
+            raw_name = skill.get('raw_name', '')
+            if is_garbage_skill(raw_name):
+                filtered_out.append(f"Garbage: {raw_name[:30]}...")
+                continue
+            
             is_valid, canonical, skill_id, confidence = self.esco.validate_skill(skill['raw_name'])
             
             # Get source info
@@ -1917,6 +2188,9 @@ def analyze_resume(candidate, job_posting=None, use_ml=True):
             )
     
     # Save validated skills
+    # CRITICAL: Delete old skills first to remove garbage from previous analyses
+    ExtractedSkill.objects.filter(candidate=candidate).delete()
+    
     saved_count = 0
     
     for skill in validated:

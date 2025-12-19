@@ -25,7 +25,7 @@
             background: white;
             border-radius: 10px;
             box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-            max-width: 600px;
+            max-width: 550px;
             width: 100%;
             padding: 40px;
         }
@@ -54,9 +54,6 @@
             font-size: 14px;
         }
         
-        input[type="text"],
-        input[type="email"],
-        input[type="tel"],
         select {
             width: 100%;
             padding: 12px;
@@ -66,9 +63,6 @@
             transition: border-color 0.3s;
         }
         
-        input[type="text"]:focus,
-        input[type="email"]:focus,
-        input[type="tel"]:focus,
         select:focus {
             outline: none;
             border-color: #667eea;
@@ -76,25 +70,32 @@
         
         .file-upload {
             border: 2px dashed #667eea;
-            border-radius: 5px;
-            padding: 30px;
+            border-radius: 8px;
+            padding: 40px 30px;
             text-align: center;
             background: #f8f9ff;
             cursor: pointer;
-            transition: background 0.3s;
+            transition: all 0.3s;
         }
         
         .file-upload:hover {
             background: #f0f2ff;
+            border-color: #764ba2;
         }
         
         .file-upload input[type="file"] {
             display: none;
         }
         
+        .file-upload-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+        
         .file-upload-label {
             color: #667eea;
             font-weight: 600;
+            font-size: 16px;
             cursor: pointer;
         }
         
@@ -105,9 +106,25 @@
         }
         
         .selected-file {
-            margin-top: 10px;
+            margin-top: 15px;
             color: #28a745;
             font-weight: 600;
+            font-size: 14px;
+        }
+        
+        .auto-extract-notice {
+            background: #e8f4fd;
+            border: 1px solid #b8daff;
+            border-radius: 5px;
+            padding: 12px;
+            margin-bottom: 25px;
+            font-size: 13px;
+            color: #004085;
+        }
+        
+        .auto-extract-notice strong {
+            display: block;
+            margin-bottom: 5px;
         }
         
         .btn {
@@ -157,8 +174,8 @@
             border: 1px solid #ffeeba;
         }
         
-        /* Job Posting Selection Styles */
-        .job-posting-section {
+        /* Collapsible sections */
+        .section {
             background: #f8f9fa;
             border-radius: 8px;
             padding: 20px;
@@ -166,31 +183,31 @@
             border: 1px solid #e0e0e0;
         }
         
-        .job-posting-section h3 {
+        .section h3 {
             color: #667eea;
-            font-size: 16px;
+            font-size: 15px;
             margin-bottom: 15px;
         }
         
-        .job-posting-section p {
+        .section p {
             color: #666;
             font-size: 13px;
             margin-bottom: 15px;
         }
         
+        /* Job Posting Cards */
         .job-posting-card {
             background: white;
             border: 2px solid #e0e0e0;
             border-radius: 5px;
-            padding: 15px;
-            margin-bottom: 10px;
+            padding: 12px 15px;
+            margin-bottom: 8px;
             cursor: pointer;
             transition: all 0.2s;
         }
         
         .job-posting-card:hover {
             border-color: #667eea;
-            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
         }
         
         .job-posting-card.selected {
@@ -207,6 +224,7 @@
             align-items: center;
             cursor: pointer;
             margin: 0;
+            font-weight: normal;
         }
         
         .job-posting-info {
@@ -216,27 +234,49 @@
         .job-posting-title {
             font-weight: 600;
             color: #333;
-            margin-bottom: 5px;
+            font-size: 14px;
         }
         
         .job-posting-meta {
-            font-size: 12px;
+            font-size: 11px;
             color: #666;
+            margin-top: 3px;
         }
         
         .no-job-option {
             background: #f0f0f0;
         }
         
-        /* Application Source Styles */
-        .source-section {
-            margin-top: 15px;
+        /* F11: Diversity Section */
+        .diversity-section {
+            border-left: 4px solid #17a2b8;
+        }
+        
+        .diversity-section h3 {
+            color: #17a2b8;
+        }
+        
+        .form-row {
+            display: flex;
+            gap: 15px;
+        }
+        
+        .form-row .form-group {
+            flex: 1;
+            margin-bottom: 0;
+        }
+        
+        .privacy-notice {
+            font-size: 11px;
+            color: #999;
+            margin-top: 12px;
+            font-style: italic;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Upload Candidate Resume</h1>
+        <h1>Upload Resume</h1>
         <p class="subtitle">InvestTalent-AI Recruitment System</p>
         
         {% if messages %}
@@ -249,66 +289,59 @@
             </div>
         {% endif %}
         
+        <!-- Auto-extraction notice -->
+        <div class="auto-extract-notice">
+            <strong>CV-First Processing</strong>
+            Name, email, and phone will be automatically extracted from your resume.
+        </div>
+        
         <form method="POST" enctype="multipart/form-data" id="uploadForm">
             {% csrf_token %}
             
+            <!-- PRIMARY: Resume Upload -->
             <div class="form-group">
-                <label for="name">Full Name *</label>
-                <input type="text" id="name" name="name" required placeholder="Enter candidate full name">
+                <label>Resume File (PDF or DOCX) *</label>
+                <div class="file-upload" onclick="document.getElementById('resume_file').click()">
+                    <input type="file" id="resume_file" name="resume_file" accept=".pdf,.docx" required onchange="displayFileName()">
+                    <div class="file-upload-icon">📄</div>
+                    <div class="file-upload-label">Click to select resume</div>
+                    <div class="file-info">PDF or DOCX format (Max 5MB)</div>
+                    <div id="fileName" class="selected-file"></div>
+                </div>
             </div>
             
-            <div class="form-group">
-                <label for="email">Email Address *</label>
-                <input type="email" id="email" name="email" required placeholder="candidate@example.com">
-            </div>
-            
-            <div class="form-group">
-                <label for="phone">Phone Number</label>
-                <input type="tel" id="phone" name="phone" placeholder="+973-XXXX-XXXX">
-            </div>
-            
-            <!-- JOB POSTING SELECTION - NEW! -->
-            <div class="job-posting-section">
-                <h3>🎯 Select Job Position (Optional)</h3>
-                <p>Select a job posting to score the candidate against specific requirements, or leave unselected for generic scoring.</p>
+            <!-- Job Posting Selection -->
+            <div class="section">
+                <h3>Job Position (Optional)</h3>
+                <p>Select a position for job-specific scoring, or leave as generic.</p>
                 
-                <!-- No Job Option -->
-                <div class="job-posting-card no-job-option">
+                <div class="job-posting-card no-job-option selected">
                     <label>
                         <input type="radio" name="job_posting_id" value="" checked>
                         <div class="job-posting-info">
                             <div class="job-posting-title">Generic Scoring</div>
-                            <div class="job-posting-meta">No specific job requirements - uses default weights</div>
+                            <div class="job-posting-meta">Default weights applied</div>
                         </div>
                     </label>
                 </div>
                 
-                <!-- Available Job Postings -->
                 {% if job_postings %}
                     {% for job in job_postings %}
-                    <div class="job-posting-card" onclick="this.querySelector('input').checked = true; highlightCard(this);">
+                    <div class="job-posting-card" onclick="selectJob(this)">
                         <label>
                             <input type="radio" name="job_posting_id" value="{{ job.id }}">
                             <div class="job-posting-info">
                                 <div class="job-posting-title">{{ job.title }}</div>
-                                <div class="job-posting-meta">
-                                    {{ job.department|default:"No Department" }} | 
-                                    Min {{ job.min_years_experience }} years exp | 
-                                    Created {{ job.created_at|date:"M d, Y" }}
-                                </div>
+                                <div class="job-posting-meta">{{ job.department|default:"" }} {% if job.role_profile.min_experience %}| Min {{ job.role_profile.min_experience }}y exp{% endif %}</div>
                             </div>
                         </label>
                     </div>
                     {% endfor %}
-                {% else %}
-                    <p style="color: #999; font-size: 13px; margin-top: 15px;">
-                        <em>No job postings available. <a href="/admin/recruitment/jobposting/add/" target="_blank">Create one</a> to enable job-specific scoring.</em>
-                    </p>
                 {% endif %}
             </div>
             
             <!-- Application Source -->
-            <div class="form-group source-section">
+            <div class="form-group">
                 <label for="application_source">Application Source</label>
                 <select id="application_source" name="application_source">
                     <option value="direct">Direct Application</option>
@@ -320,21 +353,41 @@
                 </select>
             </div>
             
-            <div class="form-group">
-                <label>Resume File (PDF or DOCX) *</label>
-                <div class="file-upload" onclick="document.getElementById('resume_file').click()">
-                    <input type="file" id="resume_file" name="resume_file" accept=".pdf,.docx" required onchange="displayFileName()">
-                    <div class="file-upload-label">
-                        📄 Click to select resume file
+            <!-- F11: Diversity Information (Self-Reported) -->
+            <div class="section diversity-section">
+                <h3>Diversity Information (Optional)</h3>
+                <p>Voluntary data for aggregate reporting only. Never used in scoring.</p>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="gender">Gender</label>
+                        <select id="gender" name="gender">
+                            <option value="">Prefer not to say</option>
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                            <option value="non_binary">Non-binary</option>
+                            <option value="other">Other</option>
+                        </select>
                     </div>
-                    <div class="file-info">
-                        Supported formats: PDF, DOCX (Max 5MB)
+                    
+                    <div class="form-group">
+                        <label for="nationality">Nationality</label>
+                        <select id="nationality" name="nationality">
+                            <option value="">Prefer not to say</option>
+                            <option value="bahraini">Bahraini</option>
+                            <option value="gcc">GCC National</option>
+                            <option value="south_asian">South Asian</option>
+                            <option value="middle_eastern">Middle Eastern</option>
+                            <option value="western">Western</option>
+                            <option value="other">Other</option>
+                        </select>
                     </div>
-                    <div id="fileName" class="selected-file"></div>
                 </div>
+                
+                <p class="privacy-notice">Confidential and PDPL-compliant.</p>
             </div>
             
-            <button type="submit" class="btn">Upload & Analyze Resume</button>
+            <button type="submit" class="btn">Upload & Analyze</button>
         </form>
         
         <div style="text-align: center; margin-top: 20px;">
@@ -345,31 +398,20 @@
     <script>
         function displayFileName() {
             const input = document.getElementById('resume_file');
-            const fileNameDisplay = document.getElementById('fileName');
+            const display = document.getElementById('fileName');
             
             if (input.files.length > 0) {
-                const fileName = input.files[0].name;
-                const fileSize = (input.files[0].size / 1024 / 1024).toFixed(2);
-                fileNameDisplay.textContent = `✓ Selected: ${fileName} (${fileSize} MB)`;
+                const name = input.files[0].name;
+                const size = (input.files[0].size / 1024 / 1024).toFixed(2);
+                display.textContent = `✓ ${name} (${size} MB)`;
             }
         }
         
-        function highlightCard(card) {
-            // Remove selected class from all cards
-            document.querySelectorAll('.job-posting-card').forEach(c => {
-                c.classList.remove('selected');
-            });
-            // Add selected class to clicked card
+        function selectJob(card) {
+            document.querySelectorAll('.job-posting-card').forEach(c => c.classList.remove('selected'));
             card.classList.add('selected');
+            card.querySelector('input').checked = true;
         }
-        
-        // Initialize - highlight the checked card on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            const checkedInput = document.querySelector('.job-posting-card input:checked');
-            if (checkedInput) {
-                checkedInput.closest('.job-posting-card').classList.add('selected');
-            }
-        });
     </script>
 </body>
 </html>

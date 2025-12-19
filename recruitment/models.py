@@ -19,6 +19,45 @@ class Candidate(models.Model):
     application_source = models.CharField(max_length=50, default='direct')
     years_experience = models.IntegerField(default=0, blank=True, null=True)
     
+    # ============================================================
+    # F11: OPTIONAL SELF-REPORTED DIVERSITY FIELDS
+    # These are NEVER used for scoring - only for aggregate analytics
+    # Compliant with GDPR Art. 5(1)(c) and Bahrain PDPL
+    # ============================================================
+    GENDER_CHOICES = [
+        ('', 'Prefer not to say'),
+        ('male', 'Male'),
+        ('female', 'Female'),
+        ('non_binary', 'Non-binary'),
+        ('other', 'Other'),
+    ]
+    
+    NATIONALITY_CHOICES = [
+        ('', 'Prefer not to say'),
+        ('bahraini', 'Bahraini'),
+        ('gcc', 'GCC National'),
+        ('south_asian', 'South Asian'),
+        ('middle_eastern', 'Middle Eastern'),
+        ('western', 'Western'),
+        ('other', 'Other'),
+    ]
+    
+    gender = models.CharField(
+        max_length=20,
+        choices=GENDER_CHOICES,
+        blank=True,
+        default='',
+        help_text='Optional. Used for diversity analytics only, not for scoring.'
+    )
+    
+    nationality = models.CharField(
+        max_length=50,
+        choices=NATIONALITY_CHOICES,
+        blank=True,
+        default='',
+        help_text='Optional. Used for diversity analytics only, not for scoring.'
+    )
+    
     STATUS_CHOICES = [
         ('received', 'Application Received'),
         ('screening', 'Under Screening'),
@@ -95,7 +134,7 @@ class Score(models.Model):
     skills_score = models.FloatField(default=0.0)
     islamic_finance_score = models.FloatField(default=0.0)
     total_score = models.FloatField(default=0.0)
-    calculated_at = models.DateTimeField(auto_now_add=True)  # Database has calculated_at, NOT evaluated_at
+    calculated_at = models.DateTimeField(auto_now_add=True)
     
     def __str__(self):
         return f"Score for {self.candidate.name}: {self.total_score}/100"
@@ -229,5 +268,5 @@ class CandidateJobApplication(models.Model):
         unique_together = ['candidate', 'job_posting']
 
 
-# Backward compatibility alias - some code uses 'Skill' instead of 'ExtractedSkill'
+# Backward compatibility alias
 Skill = ExtractedSkill

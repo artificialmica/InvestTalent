@@ -125,7 +125,6 @@
             color: #999;
         }
         
-        /* CHART CONTAINERS */
         .chart-container {
             position: relative;
             height: 300px;
@@ -181,15 +180,35 @@
             font-size: 12px;
             margin-top: 30px;
         }
+        
+        /* F11: Diversity Section Styles */
+        .diversity-notice {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 5px;
+            padding: 10px 15px;
+            margin-bottom: 20px;
+            font-size: 13px;
+            color: #856404;
+        }
+        
+        .disclosure-badge {
+            display: inline-block;
+            background: #e9ecef;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            color: #666;
+            margin-left: 10px;
+        }
     </style>
 </head>
 <body>
     <div class="navbar">
-        <h1>📊 Analytics Dashboard</h1>
+        <h1>Analytics Dashboard</h1>
         <div class="nav-links">
             <a href="{% url 'dashboard' %}">← Dashboard</a>
             <a href="{% url 'dashboard' %}">All Candidates</a>
-            {% comment %} <a href="{% url 'fairness_report' %}">Fairness Report</a> {% endcomment %}
         </div>
     </div>
     
@@ -198,7 +217,7 @@
         <div class="section">
             <div class="section-header">
                 <h2>Hiring Funnel Overview</h2>
-                <a href="{% url 'export_report' %}" class="export-btn">📥 Export Report</a>
+                <a href="{% url 'export_report' %}" class="export-btn">Export Report</a>
             </div>
             
             {% if report.hiring_funnel.status == 'no_data' %}
@@ -229,7 +248,6 @@
                 </div>
             </div>
             
-            <!-- FUNNEL CHART -->
             <div class="chart-container">
                 <canvas id="funnelChart"></canvas>
             </div>
@@ -268,7 +286,6 @@
                 </div>
             </div>
             
-            <!-- SCORE DISTRIBUTION CHART -->
             <div class="chart-grid">
                 <div class="chart-box">
                     <h3>Score Distribution</h3>
@@ -290,44 +307,110 @@
         <!-- Islamic Finance Expertise -->
         <div class="section">
             <div class="section-header">
-                <h2>☪️ Islamic Finance Expertise</h2>
+                <h2>Islamic Finance Expertise</h2>
             </div>
             
             {% if report.islamic_finance.status == 'no_data' %}
-            <p style="color: #999; text-align: center; padding: 40px;">No data available</p>
+            <p style="color: #999; text-align: center; padding: 40px;">No Islamic Finance data available</p>
             {% else %}
             <div class="metrics-grid">
-                <div class="metric-card" style="border-left-color: #28a745;">
+                <div class="metric-card">
                     <div class="metric-label">IF Penetration Rate</div>
                     <div class="metric-value">{{ report.islamic_finance.if_penetration_rate }}%</div>
-                    <div class="metric-subtext">{{ report.islamic_finance.if_any_background }} of {{ report.islamic_finance.total_candidates }} candidates</div>
+                    <div class="metric-subtext">{{ report.islamic_finance.if_any_background }} of {{ report.islamic_finance.total_candidates }}</div>
                 </div>
                 
-                <div class="metric-card">
+                <div class="metric-card" style="border-left-color: #28a745;">
                     <div class="metric-label">IF Education</div>
                     <div class="metric-value">{{ report.islamic_finance.if_education }}</div>
-                    <div class="metric-subtext">Candidates with IF certifications</div>
+                    <div class="metric-subtext">candidates with IF certifications</div>
                 </div>
                 
-                <div class="metric-card">
+                <div class="metric-card" style="border-left-color: #ffc107;">
                     <div class="metric-label">IF Experience</div>
                     <div class="metric-value">{{ report.islamic_finance.if_experience }}</div>
-                    <div class="metric-subtext">Candidates with IF work experience</div>
+                    <div class="metric-subtext">candidates with IF work experience</div>
                 </div>
                 
-                <div class="metric-card">
+                <div class="metric-card" style="border-left-color: #17a2b8;">
                     <div class="metric-label">IF Skills</div>
                     <div class="metric-value">{{ report.islamic_finance.if_skills }}</div>
-                    <div class="metric-subtext">Candidates with IF skills</div>
+                    <div class="metric-subtext">candidates with IF skills</div>
                 </div>
             </div>
             
-            <!-- IF BREAKDOWN CHART -->
-            <div class="chart-container" style="max-width: 500px; margin: 20px auto;">
-                <canvas id="ifBreakdownChart"></canvas>
+            <div class="chart-grid">
+                <div class="chart-box">
+                    <h3>Islamic Finance Expertise Breakdown</h3>
+                    <div class="chart-container">
+                        <canvas id="ifBreakdownChart"></canvas>
+                    </div>
+                </div>
             </div>
             {% endif %}
         </div>
+        
+        <!-- ============================================================ -->
+        <!-- F11: DIVERSITY METRICS SECTION (Self-Reported) -->
+        <!-- ============================================================ -->
+        <div class="section">
+            <div class="section-header">
+                <h2>Diversity Metrics</h2>
+                <span class="disclosure-badge">Self-Reported Data</span>
+            </div>
+            
+            {% if report.diversity_metrics.status == 'no_data' %}
+            <p style="color: #999; text-align: center; padding: 40px;">{{ report.diversity_metrics.message }}</p>
+            {% else %}
+            
+            <!-- Notice about self-reported data -->
+            <div class="diversity-notice">
+                {{ report.diversity_metrics.notice }}
+            </div>
+            
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-label">Total Candidates</div>
+                    <div class="metric-value">{{ report.diversity_metrics.total_candidates }}</div>
+                </div>
+                
+                <div class="metric-card" style="border-left-color: #17a2b8;">
+                    <div class="metric-label">Male</div>
+                    <div class="metric-value">{{ report.diversity_metrics.gender_distribution.male.percentage }}%</div>
+                    <div class="metric-subtext">{{ report.diversity_metrics.gender_distribution.male.count }} candidates</div>
+                </div>
+                
+                <div class="metric-card" style="border-left-color: #e83e8c;">
+                    <div class="metric-label">Female</div>
+                    <div class="metric-value">{{ report.diversity_metrics.gender_distribution.female.percentage }}%</div>
+                    <div class="metric-subtext">{{ report.diversity_metrics.gender_distribution.female.count }} candidates</div>
+                </div>
+                
+                <div class="metric-card" style="border-left-color: #6c757d;">
+                    <div class="metric-label">Gender Disclosure Rate</div>
+                    <div class="metric-value">{{ report.diversity_metrics.disclosure_rates.gender }}%</div>
+                    <div class="metric-subtext">voluntarily disclosed</div>
+                </div>
+            </div>
+            
+            <div class="chart-grid">
+                <div class="chart-box">
+                    <h3>Gender Distribution (Self-Reported)</h3>
+                    <div class="chart-container">
+                        <canvas id="genderChart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="chart-box">
+                    <h3>Nationality Distribution (Self-Reported)</h3>
+                    <div class="chart-container">
+                        <canvas id="nationalityChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        <!-- END F11 DIVERSITY SECTION -->
         
         <!-- Top Skills -->
         <div class="section">
@@ -344,23 +427,25 @@
                 </div>
                 
                 <div class="chart-box">
-                    <h3>Skill Frequency</h3>
+                    <h3>Skills List</h3>
                     <ul class="skills-list">
                         {% for skill in report.top_skills %}
                         <li class="skill-item">
                             <span class="skill-name">{{ skill.skill_name }}</span>
                             <span class="skill-count">{{ skill.count }}</span>
                         </li>
+                        {% empty %}
+                        <li style="color: #999; padding: 20px; text-align: center;">No skills data available</li>
                         {% endfor %}
                     </ul>
                 </div>
             </div>
         </div>
         
-        <!-- Education & Experience -->
+        <!-- Education & Experience Analysis -->
         <div class="section">
             <div class="section-header">
-                <h2>Education & Experience Distribution</h2>
+                <h2>Education & Experience Analysis</h2>
             </div>
             
             <div class="chart-grid">
@@ -384,7 +469,7 @@
         </div>
         
         <div class="timestamp">
-             Generated: {{ report.generated_at }}
+            Generated: {{ report.generated_at }}
         </div>
     </div>
     
@@ -400,7 +485,9 @@
             success: '#28a745',
             warning: '#ffc107',
             danger: '#dc3545',
-            info: '#17a2b8'
+            info: '#17a2b8',
+            pink: '#e83e8c',
+            gray: '#6c757d'
         };
         
         // 1. FUNNEL CHART
@@ -538,7 +625,83 @@
         });
         {% endif %}
         
-        // 5. TOP SKILLS CHART
+        // ============================================================
+        // F11: DIVERSITY CHARTS (Self-Reported Data)
+        // ============================================================
+        {% if report.diversity_metrics.status != 'no_data' %}
+        
+        // 5. GENDER DISTRIBUTION CHART
+        new Chart(document.getElementById('genderChart'), {
+            type: 'pie',
+            data: {
+                labels: ['Male', 'Female', 'Non-binary', 'Other', 'Not Disclosed'],
+                datasets: [{
+                    data: [
+                        {{ report.diversity_metrics.gender_distribution.male.count }},
+                        {{ report.diversity_metrics.gender_distribution.female.count }},
+                        {{ report.diversity_metrics.gender_distribution.non_binary.count }},
+                        {{ report.diversity_metrics.gender_distribution.other.count }},
+                        {{ report.diversity_metrics.gender_distribution.not_disclosed.count }}
+                    ],
+                    backgroundColor: [
+                        colors.info,      // Male - blue
+                        colors.pink,      // Female - pink
+                        colors.secondary, // Non-binary - purple
+                        colors.warning,   // Other - yellow
+                        colors.gray       // Not disclosed - gray
+                    ],
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
+        });
+        
+        // 6. NATIONALITY DISTRIBUTION CHART
+        new Chart(document.getElementById('nationalityChart'), {
+            type: 'pie',
+            data: {
+                labels: ['Bahraini', 'GCC', 'South Asian', 'Middle Eastern', 'Western', 'Other', 'Not Disclosed'],
+                datasets: [{
+                    data: [
+                        {{ report.diversity_metrics.nationality_distribution.bahraini.count }},
+                        {{ report.diversity_metrics.nationality_distribution.gcc.count }},
+                        {{ report.diversity_metrics.nationality_distribution.south_asian.count }},
+                        {{ report.diversity_metrics.nationality_distribution.middle_eastern.count }},
+                        {{ report.diversity_metrics.nationality_distribution.western.count }},
+                        {{ report.diversity_metrics.nationality_distribution.other.count }},
+                        {{ report.diversity_metrics.nationality_distribution.not_disclosed.count }}
+                    ],
+                    backgroundColor: [
+                        colors.danger,    // Bahraini - red
+                        colors.success,   // GCC - green
+                        colors.warning,   // South Asian - yellow
+                        colors.info,      // Middle Eastern - cyan
+                        colors.secondary, // Western - purple
+                        colors.primary,   // Other - blue
+                        colors.gray       // Not disclosed - gray
+                    ],
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
+        });
+        {% endif %}
+        
+        // 7. TOP SKILLS CHART
         new Chart(document.getElementById('topSkillsChart'), {
             type: 'bar',
             data: {
@@ -566,7 +729,7 @@
             }
         });
         
-        // 6. EDUCATION DISTRIBUTION
+        // 8. EDUCATION DISTRIBUTION
         new Chart(document.getElementById('educationChart'), {
             type: 'pie',
             data: {
@@ -591,7 +754,7 @@
             }
         });
         
-        // 7. EXPERIENCE DISTRIBUTION
+        // 9. EXPERIENCE DISTRIBUTION
         new Chart(document.getElementById('experienceChart'), {
             type: 'bar',
             data: {

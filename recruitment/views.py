@@ -79,6 +79,11 @@ def upload_resume(request):
     if request.method == 'POST':
         uploaded_file = request.FILES.get('resume_file')
         job_id = request.POST.get('job_posting_id')
+        application_source = request.POST.get('application_source', 'direct')
+        
+        # F11: Get self-reported diversity data (optional)
+        gender = request.POST.get('gender', '')
+        nationality = request.POST.get('nationality', '')
         
         # Validate file exists
         if not uploaded_file:
@@ -152,7 +157,10 @@ def upload_resume(request):
                 status='received',
                 ip_address=client_ip,
                 file_hash=file_hash,
-                application_source='direct'
+                application_source=application_source,
+                # F11: Self-reported diversity data
+                gender=gender,
+                nationality=nationality,
             )
             
             # Add security flags if threats detected

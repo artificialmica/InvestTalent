@@ -5,33 +5,83 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}InvestTalent-AI{% endblock %}</title>
     
+    <!-- Google Fonts: Playfair Display + Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
     <style>
+        /* ============================================
+           INVESTTALENT-AI DESIGN SYSTEM
+           Color Palette: Navy + Gold
+           ============================================ */
+        :root {
+            /* Primary Colors */
+            --primary-dark: #1B3C53;
+            --primary: #234C6A;
+            --primary-light: #456882;
+            
+            /* Neutrals */
+            --white: #FFFFFF;
+            --off-white: #F8F9FA;
+            --gray-light: #E3E3E3;
+            --gray-medium: #9AACB8;
+            
+            /* Text Colors */
+            --text-primary: #1B3C53;
+            --text-secondary: #456882;
+            --text-muted: #6B7C88;
+            
+            /* Accent Colors */
+            --accent-gold: #C9A227;
+            --accent-gold-light: #D4B84A;
+            
+            /* Semantic Colors */
+            --success: #2D8659;
+            --success-light: #E8F5EE;
+            --warning: #D4A012;
+            --warning-light: #FDF6E3;
+            --danger: #C23B3B;
+            --danger-light: #FCEAEA;
+            --info: #2D7D9A;
+            --info-light: #E8F4F8;
+            
+            /* Typography */
+            --font-heading: 'Playfair Display', Georgia, serif;
+            --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            
+            /* Effects */
+            --shadow-sm: 0 1px 2px rgba(27, 60, 83, 0.05);
+            --shadow-md: 0 4px 12px rgba(27, 60, 83, 0.08);
+            --shadow-lg: 0 8px 24px rgba(27, 60, 83, 0.12);
+            
+            /* Borders */
+            --radius-sm: 4px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+        }
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
 
-        :root {
-            --primary: #667eea;
-            --secondary: #764ba2;
-            --success: #28a745;
-            --danger: #dc3545;
-            --warning: #ffc107;
-            --info: #17a2b8;
-            --light-bg: #f5f7fa;
-        }
-
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: var(--light-bg);
+            font-family: var(--font-body);
+            background: var(--off-white);
+            color: var(--text-primary);
+            line-height: 1.6;
         }
 
+        /* ============================================
+           NAVBAR
+           ============================================ */
         .navbar {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-            color: white;
-            padding: 20px 40px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            background: var(--primary-dark);
+            color: var(--white);
+            padding: 16px 40px;
+            box-shadow: var(--shadow-md);
         }
 
         .navbar-content {
@@ -43,43 +93,53 @@
         }
 
         .navbar h1 {
-            font-size: 24px;
+            font-family: var(--font-heading);
+            font-size: 22px;
+            font-weight: 600;
+            letter-spacing: -0.02em;
         }
 
         .navbar p {
-            opacity: 0.9;
-            font-size: 13px;
-            margin-top: 3px;
+            opacity: 0.7;
+            font-size: 12px;
+            margin-top: 2px;
+            font-weight: 400;
         }
 
         .nav-links {
             display: flex;
-            gap: 20px;
+            gap: 8px;
             list-style: none;
             align-items: center;
         }
 
         .nav-links a {
-            color: white;
+            color: var(--white);
             text-decoration: none;
-            padding: 8px 16px;
-            border-radius: 5px;
-            transition: background 0.3s;
+            padding: 8px 14px;
+            border-radius: var(--radius-md);
+            transition: all 0.2s;
+            font-size: 13px;
+            font-weight: 500;
+            opacity: 0.85;
         }
 
         .nav-links a:hover,
         .nav-links a.active {
-            background: rgba(255, 255, 255, 0.2);
+            opacity: 1;
+            background: rgba(255, 255, 255, 0.15);
         }
 
-        /* User Info Styles */
+        /* ============================================
+           USER INFO STYLES
+           ============================================ */
         .user-info {
             display: flex;
             align-items: center;
             gap: 15px;
             margin-left: 20px;
             padding-left: 20px;
-            border-left: 1px solid rgba(255,255,255,0.3);
+            border-left: 1px solid rgba(255, 255, 255, 0.2);
         }
 
         .user-details {
@@ -88,67 +148,74 @@
 
         .user-name {
             font-weight: 600;
-            font-size: 14px;
+            font-size: 13px;
         }
 
         .user-role {
             display: inline-block;
             padding: 3px 10px;
             border-radius: 12px;
-            font-size: 11px;
+            font-size: 10px;
             font-weight: 600;
             margin-top: 3px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
         }
 
         .role-hr-admin {
-            background: var(--danger);
-            color: white;
+            background: var(--info);
+            color: var(--white);
         }
 
         .role-hiring-manager {
-            background: var(--warning);
-            color: #333;
+            background: var(--primary-light);
+            color: var(--white);
         }
 
         .role-executive {
-            background: var(--info);
-            color: white;
+            background: var(--gray-medium);
+            color: var(--primary-dark);
         }
 
         .role-superuser {
-            background: #333;
-            color: white;
+            background: var(--accent-gold);
+            color: var(--primary-dark);
         }
 
         .logout-btn {
-            background: rgba(255,255,255,0.2);
-            color: white;
-            padding: 8px 16px;
-            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.15);
+            color: var(--white);
+            padding: 7px 14px;
+            border-radius: var(--radius-md);
             text-decoration: none;
-            font-size: 13px;
-            transition: background 0.3s;
+            font-size: 12px;
+            font-weight: 500;
+            transition: all 0.2s;
         }
 
         .logout-btn:hover {
-            background: rgba(255,255,255,0.3);
+            background: rgba(255, 255, 255, 0.25);
         }
 
         .login-btn {
-            background: white;
-            color: var(--primary);
-            padding: 8px 20px;
-            border-radius: 5px;
+            background: var(--accent-gold);
+            color: var(--primary-dark);
+            padding: 8px 18px;
+            border-radius: var(--radius-md);
             text-decoration: none;
             font-weight: 600;
             font-size: 13px;
-            transition: transform 0.2s;
+            transition: all 0.2s;
         }
 
         .login-btn:hover {
-            transform: scale(1.05);
+            background: var(--accent-gold-light);
+            transform: translateY(-1px);
         }
 
+        /* ============================================
+           MESSAGES / ALERTS
+           ============================================ */
         .messages {
             max-width: 1400px;
             margin: 20px auto;
@@ -156,33 +223,162 @@
         }
 
         .alert {
-            padding: 15px 20px;
-            border-radius: 5px;
-            margin-bottom: 15px;
+            padding: 14px 18px;
+            border-radius: var(--radius-md);
+            margin-bottom: 12px;
+            font-size: 14px;
+            border-left: 4px solid;
         }
 
         .alert-success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
+            background: var(--success-light);
+            color: var(--success);
+            border-left-color: var(--success);
         }
 
         .alert-error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
+            background: var(--danger-light);
+            color: var(--danger);
+            border-left-color: var(--danger);
         }
 
         .alert-info {
-            background: #d1ecf1;
-            color: #0c5460;
-            border: 1px solid #bee5eb;
+            background: var(--info-light);
+            color: var(--info);
+            border-left-color: var(--info);
         }
 
         .alert-warning {
-            background: #fff3cd;
-            color: #856404;
-            border: 1px solid #ffeeba;
+            background: var(--warning-light);
+            color: #8B6914;
+            border-left-color: var(--warning);
+        }
+
+        /* ============================================
+           COMMON UTILITY CLASSES
+           ============================================ */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 30px 40px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 10px 20px;
+            border: none;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 13px;
+            font-family: var(--font-body);
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: var(--primary-dark);
+            color: var(--white);
+        }
+
+        .btn-primary:hover {
+            background: var(--primary);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-secondary {
+            background: var(--gray-light);
+            color: var(--text-secondary);
+        }
+
+        .btn-secondary:hover {
+            background: #d4d4d4;
+        }
+
+        .btn-gold {
+            background: var(--accent-gold);
+            color: var(--primary-dark);
+        }
+
+        .btn-gold:hover {
+            background: var(--accent-gold-light);
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: var(--primary);
+            border: 1px solid var(--gray-light);
+        }
+
+        .btn-outline:hover {
+            border-color: var(--primary-light);
+            background: rgba(35, 76, 106, 0.03);
+        }
+
+        /* ============================================
+           CARDS
+           ============================================ */
+        .card {
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+            border: 1px solid rgba(27, 60, 83, 0.06);
+        }
+
+        .card-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--gray-light);
+            background: var(--off-white);
+            border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+        }
+
+        .card-body {
+            padding: 20px;
+        }
+
+        /* ============================================
+           RESPONSIVE
+           ============================================ */
+        @media (max-width: 1024px) {
+            .navbar {
+                padding: 14px 24px;
+            }
+            
+            .nav-links {
+                gap: 4px;
+            }
+            
+            .nav-links a {
+                padding: 6px 10px;
+                font-size: 12px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .navbar-content {
+                flex-direction: column;
+                gap: 16px;
+                text-align: center;
+            }
+            
+            .user-info {
+                margin-left: 0;
+                padding-left: 0;
+                border-left: none;
+                padding-top: 12px;
+                border-top: 1px solid rgba(255, 255, 255, 0.2);
+            }
+            
+            .messages {
+                padding: 0 20px;
+            }
+            
+            .container {
+                padding: 20px;
+            }
         }
 
         {% block extra_css %}{% endblock %}
@@ -192,7 +388,7 @@
     <div class="navbar">
         <div class="navbar-content">
             <div>
-                <h1>🎯 InvestTalent-AI</h1>
+                <h1>InvestTalent-AI</h1>
                 <p>AI-Powered Islamic Finance Recruitment</p>
             </div>
             
@@ -201,26 +397,26 @@
                     {% if user.is_authenticated %}
                         <!-- HR Admin Only: Upload -->
                         {% if user.is_superuser or user.groups.all.0.name == 'HR Admin' %}
-                        <li><a href="{% url 'upload_resume' %}" {% if request.resolver_match.url_name == 'upload_resume' %}class="active"{% endif %}>📤 Upload</a></li>
+                        <li><a href="{% url 'upload_resume' %}" {% if request.resolver_match.url_name == 'upload_resume' %}class="active"{% endif %}>Upload</a></li>
                         {% endif %}
                         
                         <!-- All Roles: Dashboard -->
-                        <li><a href="{% url 'dashboard' %}" {% if request.resolver_match.url_name == 'dashboard' %}class="active"{% endif %}>📊 Dashboard</a></li>
+                        <li><a href="{% url 'dashboard' %}" {% if request.resolver_match.url_name == 'dashboard' %}class="active"{% endif %}>Dashboard</a></li>
                         
                         <!-- All Roles: Analytics -->
-                        <li><a href="{% url 'analytics' %}" {% if request.resolver_match.url_name == 'analytics' %}class="active"{% endif %}>📈 Analytics</a></li>
+                        <li><a href="{% url 'analytics' %}" {% if request.resolver_match.url_name == 'analytics' %}class="active"{% endif %}>Analytics</a></li>
                         
                         <!-- HR Admin Only: Jobs -->
                         {% if user.is_superuser or user.groups.all.0.name == 'HR Admin' %}
-                        <li><a href="{% url 'job_list' %}" {% if request.resolver_match.url_name == 'job_list' %}class="active"{% endif %}>💼 Jobs</a></li>
+                        <li><a href="{% url 'job_list' %}" {% if request.resolver_match.url_name == 'job_list' %}class="active"{% endif %}>Jobs</a></li>
                         {% endif %}
                         
                         <!-- Admin Link for Superusers -->
                         {% if user.is_superuser %}
-                        <li><a href="/admin/" target="_blank">⚙️ Admin</a></li>
+                        <li><a href="/admin/" target="_blank">Admin</a></li>
                         {% endif %}
                     {% else %}
-                        <li><a href="{% url 'dashboard' %}">📊 Dashboard</a></li>
+                        <li><a href="{% url 'dashboard' %}">Dashboard</a></li>
                     {% endif %}
                 </ul>
                 
@@ -244,9 +440,9 @@
                                 {% endif %}
                             </span>
                         </div>
-                        <a href="{% url 'logout' %}" class="logout-btn">Logout</a>
+                        <a href="{% url 'logout' %}" class="logout-btn">Sign Out</a>
                     {% else %}
-                        <a href="{% url 'login' %}" class="login-btn">Login</a>
+                        <a href="{% url 'login' %}" class="login-btn">Sign In</a>
                     {% endif %}
                 </div>
             </div>

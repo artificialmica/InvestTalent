@@ -15,13 +15,14 @@ urlpatterns = [
     
     # AUTHENTICATION (RBAC)
     path('login/', auth_views.LoginView.as_view(template_name='registration/login.html'), name='login'),
-    path('logout/', views.logout_view, name='logout'),  # Use custom logout view
+    path('logout/', views.logout_view, name='logout'),
     
     # MAIN PAGES
     path('', views.dashboard, name='dashboard'),
     path('upload/', views.upload_resume, name='upload_resume'),
     
     # CANDIDATE PAGES
+    path('candidates/', views.candidate_list, name='candidate_list'),  # ADDED - was missing!
     path('candidate/<int:pk>/', views.candidate_detail, name='candidate_detail'),
     path('candidate/<int:pk>/update-status/', views.update_candidate_status, name='update_status'),
     path('compare/', views.compare_candidates, name='compare_candidates'),
@@ -33,6 +34,7 @@ urlpatterns = [
     path('jobs/<int:job_id>/match/', views.job_match, name='job_match'),
     
     # ANALYTICS & REPORTS
+    # Both names work - 'analytics' for old templates, 'analytics_dashboard' for new templates
     path('analytics/', views.analytics_dashboard, name='analytics'),
     path('fairness/', views.fairness_report, name='fairness_report'),
     path('system-health/', views.system_health, name='system_health'),

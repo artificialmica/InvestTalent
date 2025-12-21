@@ -4,6 +4,10 @@
 
 {% block extra_css %}
 <style>
+    /* ============================================
+       INVESTTALENT-AI DESIGN SYSTEM
+       Color Palette: Navy + Gold
+       ============================================ */
     .container {
         max-width: 1600px;
         margin: 0 auto;
@@ -18,33 +22,41 @@
     }
 
     .page-header h2 {
-        color: #333;
-        font-size: 28px;
+        font-family: 'Playfair Display', Georgia, serif;
+        color: var(--text-primary, #1B3C53);
+        font-size: 26px;
+        font-weight: 600;
     }
 
     .btn {
         padding: 10px 20px;
         border: none;
-        border-radius: 5px;
+        border-radius: 8px;
         cursor: pointer;
         font-weight: 600;
-        font-size: 14px;
+        font-size: 13px;
         text-decoration: none;
-        transition: all 0.3s;
+        transition: all 0.2s;
+        font-family: 'Inter', sans-serif;
     }
 
     .btn-secondary {
-        background: #f0f0f0;
-        color: #666;
+        background: #E3E3E3;
+        color: #456882;
     }
 
     .btn-secondary:hover {
-        background: #e0e0e0;
+        background: #d4d4d4;
     }
 
     .btn-primary {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: #1B3C53;
         color: white;
+    }
+
+    .btn-primary:hover {
+        background: #234C6A;
+        transform: translateY(-1px);
     }
 
     .comparison-grid {
@@ -53,27 +65,41 @@
         gap: 20px;
     }
 
+    @media (max-width: 1024px) {
+        .comparison-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @media (max-width: 640px) {
+        .comparison-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
     .candidate-card {
         background: white;
         border-radius: 12px;
-        box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        box-shadow: 0 4px 12px rgba(27, 60, 83, 0.08);
         overflow: hidden;
     }
 
     .candidate-header {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: #1B3C53;
         color: white;
-        padding: 25px;
+        padding: 24px;
         text-align: center;
     }
 
     .candidate-header h3 {
-        font-size: 20px;
-        margin-bottom: 5px;
+        font-family: 'Playfair Display', Georgia, serif;
+        font-size: 18px;
+        font-weight: 600;
+        margin-bottom: 4px;
     }
 
     .candidate-header p {
-        opacity: 0.9;
+        opacity: 0.8;
         font-size: 13px;
     }
 
@@ -87,17 +113,18 @@
         font-weight: bold;
         font-size: 16px;
         margin-bottom: 10px;
+        color: #1B3C53;
     }
 
-    .rank-1 { background: linear-gradient(135deg, #FFD700, #FFA500); }
-    .rank-2 { background: linear-gradient(135deg, #C0C0C0, #A8A8A8); }
-    .rank-3 { background: linear-gradient(135deg, #CD7F32, #B87333); }
-    .rank-other { background: rgba(255,255,255,0.3); }
+    .rank-1 { background: #C9A227; }
+    .rank-2 { background: #9AACB8; }
+    .rank-3 { background: #B87333; }
+    .rank-other { background: rgba(255,255,255,0.3); color: white; }
 
     .score-section {
         padding: 20px;
-        background: #f8f9ff;
-        border-bottom: 1px solid #eee;
+        background: #F8F9FA;
+        border-bottom: 1px solid #E3E3E3;
     }
 
     .total-score {
@@ -106,17 +133,17 @@
     }
 
     .total-score .score-value {
-        font-size: 48px;
-        font-weight: bold;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
+        font-family: 'Playfair Display', Georgia, serif;
+        font-size: 44px;
+        font-weight: 700;
+        color: #1B3C53;
     }
 
     .total-score .score-label {
-        color: #666;
-        font-size: 14px;
+        color: #6B7C88;
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
     }
 
     .score-breakdown {
@@ -133,22 +160,24 @@
     }
 
     .score-item .label {
-        font-size: 11px;
-        color: #888;
+        font-size: 10px;
+        color: #6B7C88;
         text-transform: uppercase;
-        letter-spacing: 0.5px;
-        margin-bottom: 5px;
+        letter-spacing: 0.05em;
+        margin-bottom: 6px;
+        font-weight: 600;
     }
 
     .score-item .value {
-        font-size: 20px;
-        font-weight: bold;
-        color: #333;
+        font-family: 'Playfair Display', Georgia, serif;
+        font-size: 18px;
+        font-weight: 700;
+        color: #1B3C53;
     }
 
     .score-bar {
         height: 4px;
-        background: #e0e0e0;
+        background: #E3E3E3;
         border-radius: 2px;
         margin-top: 8px;
         overflow: hidden;
@@ -160,13 +189,13 @@
         transition: width 0.5s ease;
     }
 
-    .score-bar-fill.high { background: linear-gradient(90deg, #28a745, #20c997); }
-    .score-bar-fill.medium { background: linear-gradient(90deg, #ffc107, #fd7e14); }
-    .score-bar-fill.low { background: linear-gradient(90deg, #dc3545, #e83e8c); }
+    .score-bar-fill.high { background: #2D8659; }
+    .score-bar-fill.medium { background: #C9A227; }
+    .score-bar-fill.low { background: #C23B3B; }
 
     .detail-section {
         padding: 20px;
-        border-bottom: 1px solid #f0f0f0;
+        border-bottom: 1px solid #F0F0F0;
     }
 
     .detail-section:last-child {
@@ -174,12 +203,12 @@
     }
 
     .section-title {
-        font-size: 14px;
+        font-size: 12px;
         font-weight: 600;
-        color: #667eea;
+        color: #1B3C53;
         text-transform: uppercase;
-        letter-spacing: 0.5px;
-        margin-bottom: 15px;
+        letter-spacing: 0.08em;
+        margin-bottom: 14px;
         display: flex;
         align-items: center;
         gap: 8px;
@@ -189,10 +218,10 @@
         display: flex;
         align-items: flex-start;
         gap: 10px;
-        margin-bottom: 12px;
-        padding: 10px;
-        background: #f8f9fa;
-        border-radius: 6px;
+        margin-bottom: 10px;
+        padding: 10px 12px;
+        background: #F8F9FA;
+        border-radius: 8px;
     }
 
     .detail-item:last-child {
@@ -210,9 +239,9 @@
         flex-shrink: 0;
     }
 
-    .icon-education { background: #e3f2fd; }
-    .icon-experience { background: #fff3e0; }
-    .icon-skill { background: #e8f5e9; }
+    .icon-education { background: #E8F4F8; }
+    .icon-experience { background: #FDF6E3; }
+    .icon-skill { background: #E8F5EE; }
 
     .detail-content {
         flex: 1;
@@ -221,12 +250,12 @@
 
     .detail-content .title {
         font-weight: 600;
-        color: #333;
-        font-size: 14px;
+        color: #1B3C53;
+        font-size: 13px;
     }
 
     .detail-content .subtitle {
-        color: #666;
+        color: #6B7C88;
         font-size: 12px;
         margin-top: 2px;
     }
@@ -238,55 +267,55 @@
     }
 
     .skill-tag {
-        background: linear-gradient(135deg, #667eea20, #764ba220);
-        color: #667eea;
+        background: rgba(35, 76, 106, 0.08);
+        color: #234C6A;
         padding: 5px 10px;
-        border-radius: 15px;
-        font-size: 12px;
+        border-radius: 14px;
+        font-size: 11px;
         font-weight: 500;
     }
 
     .skill-tag.validated {
-        background: linear-gradient(135deg, #28a74520, #20c99720);
-        color: #28a745;
+        background: rgba(45, 134, 89, 0.12);
+        color: #2D8659;
     }
 
     .experience-years {
         display: inline-flex;
         align-items: center;
         gap: 5px;
-        background: #667eea;
+        background: #234C6A;
         color: white;
-        padding: 8px 15px;
+        padding: 8px 14px;
         border-radius: 20px;
         font-weight: 600;
-        font-size: 14px;
+        font-size: 13px;
     }
 
     .status-badge {
         display: inline-block;
-        padding: 5px 12px;
-        border-radius: 15px;
-        font-size: 12px;
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 11px;
         font-weight: 600;
     }
 
-    .status-received { background: #e3f2fd; color: #1976d2; }
-    .status-screening { background: #fff3e0; color: #f57c00; }
-    .status-shortlisted { background: #f3e5f5; color: #7b1fa2; }
-    .status-interview { background: #e8f5e9; color: #388e3c; }
-    .status-offer { background: #e0f2f1; color: #00796b; }
-    .status-hired { background: #c8e6c9; color: #2e7d32; }
-    .status-rejected { background: #ffebee; color: #c62828; }
+    .status-received { background: #E8F4F8; color: #2D7D9A; }
+    .status-screening { background: #FDF6E3; color: #8B6914; }
+    .status-shortlisted { background: rgba(69, 104, 130, 0.12); color: #456882; }
+    .status-interview { background: #E8F5EE; color: #2D8659; }
+    .status-offer { background: #E8F5EE; color: #2D8659; }
+    .status-hired { background: #2D8659; color: white; }
+    .status-rejected { background: #FCEAEA; color: #C23B3B; }
 
     .if-badge {
         display: inline-flex;
         align-items: center;
         gap: 5px;
-        background: linear-gradient(135deg, #00695c, #00897b);
-        color: white;
-        padding: 5px 12px;
-        border-radius: 15px;
+        background: #C9A227;
+        color: #1B3C53;
+        padding: 6px 14px;
+        border-radius: 14px;
         font-size: 12px;
         font-weight: 600;
     }
@@ -295,22 +324,22 @@
         position: absolute;
         top: -10px;
         right: -10px;
-        background: linear-gradient(135deg, #FFD700, #FFA500);
-        color: white;
-        width: 60px;
-        height: 60px;
+        background: #C9A227;
+        color: #1B3C53;
+        width: 50px;
+        height: 50px;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 24px;
-        box-shadow: 0 4px 15px rgba(255, 193, 7, 0.4);
+        font-size: 22px;
+        box-shadow: 0 4px 12px rgba(201, 162, 39, 0.4);
     }
 
     .candidate-card.winner {
         position: relative;
-        box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3);
-        border: 2px solid #667eea;
+        box-shadow: 0 4px 20px rgba(27, 60, 83, 0.15);
+        border: 2px solid #C9A227;
     }
 
     .contact-info {
@@ -324,12 +353,12 @@
         display: flex;
         align-items: center;
         gap: 8px;
-        font-size: 13px;
-        color: rgba(255,255,255,0.9);
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.85);
     }
 
     .action-buttons {
-        padding: 20px;
+        padding: 16px 20px;
         display: flex;
         gap: 10px;
     }
@@ -341,17 +370,25 @@
     }
 
     .btn-view {
-        background: #667eea;
+        background: #1B3C53;
         color: white;
+    }
+
+    .btn-view:hover {
+        background: #234C6A;
     }
 
     .btn-shortlist {
-        background: #28a745;
+        background: #2D8659;
         color: white;
     }
 
+    .btn-shortlist:hover {
+        background: #247048;
+    }
+
     .no-data {
-        color: #999;
+        color: #9AACB8;
         font-style: italic;
         font-size: 13px;
     }
@@ -366,8 +403,8 @@
         position: absolute;
         top: -5px;
         right: -5px;
-        color: #FFD700;
-        font-size: 16px;
+        color: #C9A227;
+        font-size: 14px;
     }
 
     /* Empty state */
@@ -376,16 +413,17 @@
         padding: 60px;
         background: white;
         border-radius: 12px;
-        box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        box-shadow: 0 4px 12px rgba(27, 60, 83, 0.08);
     }
 
     .empty-state h3 {
-        color: #666;
-        margin-bottom: 15px;
+        font-family: 'Playfair Display', Georgia, serif;
+        color: #456882;
+        margin-bottom: 12px;
     }
 
     .empty-state p {
-        color: #999;
+        color: #6B7C88;
         margin-bottom: 20px;
     }
 </style>
@@ -394,7 +432,7 @@
 {% block content %}
 <div class="container">
     <div class="page-header">
-        <h2>📊 Candidate Comparison</h2>
+        <h2>Candidate Comparison</h2>
         <a href="{% url 'dashboard' %}" class="btn btn-secondary">← Back to Dashboard</a>
     </div>
 
@@ -471,7 +509,7 @@
 
             <!-- Experience Section -->
             <div class="detail-section">
-                <div class="section-title">💼 Experience</div>
+                <div class="section-title">Experience</div>
                 <div class="experience-years">
                     📅 {{ item.years_experience|default:0 }} Years
                 </div>
@@ -492,7 +530,7 @@
 
             <!-- Education Section -->
             <div class="detail-section">
-                <div class="section-title">🎓 Education</div>
+                <div class="section-title">Education</div>
                 {% if item.education %}
                     {% for edu in item.education %}
                     <div class="detail-item">
@@ -510,7 +548,7 @@
 
             <!-- Skills Section -->
             <div class="detail-section">
-                <div class="section-title">🔧 Skills</div>
+                <div class="section-title">Skills</div>
                 {% if item.skills %}
                 <div class="skill-tags">
                     {% for skill in item.skills|slice:":12" %}
@@ -530,7 +568,7 @@
             <!-- Islamic Finance -->
             {% if item.candidate.score.islamic_finance_score > 0 %}
             <div class="detail-section">
-                <div class="section-title">☪️ Islamic Finance</div>
+                <div class="section-title">Islamic Finance</div>
                 <div class="if-badge">
                     ✓ Score: {{ item.candidate.score.islamic_finance_score|floatformat:0 }}/100
                 </div>

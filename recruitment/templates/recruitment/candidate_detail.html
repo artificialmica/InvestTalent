@@ -4,7 +4,47 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ candidate.name }} - InvestTalent-AI</title>
+    
+    <!-- Google Fonts: Playfair Display + Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
     <style>
+        /* ============================================
+           INVESTTALENT-AI DESIGN SYSTEM
+           Color Palette: Navy + Gold
+           ============================================ */
+        :root {
+            --primary-dark: #1B3C53;
+            --primary: #234C6A;
+            --primary-light: #456882;
+            --gray-light: #E3E3E3;
+            --white: #FFFFFF;
+            --off-white: #F8F9FA;
+            --gray-medium: #9AACB8;
+            --text-primary: #1B3C53;
+            --text-secondary: #456882;
+            --text-muted: #6B7C88;
+            --accent-gold: #C9A227;
+            --accent-gold-light: #D4B84A;
+            --success: #2D8659;
+            --success-light: #E8F5EE;
+            --warning: #D4A012;
+            --warning-light: #FDF6E3;
+            --danger: #C23B3B;
+            --danger-light: #FCEAEA;
+            --info: #2D7D9A;
+            --info-light: #E8F4F8;
+            --font-heading: 'Playfair Display', Georgia, serif;
+            --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            --shadow-sm: 0 1px 2px rgba(27, 60, 83, 0.05);
+            --shadow-md: 0 4px 12px rgba(27, 60, 83, 0.08);
+            --shadow-lg: 0 8px 24px rgba(27, 60, 83, 0.12);
+            --radius-md: 8px;
+            --radius-lg: 12px;
+        }
+        
         * {
             margin: 0;
             padding: 0;
@@ -12,51 +52,64 @@
         }
         
         body {
-            font-family: Arial, sans-serif;
-            background: #f5f5f5;
-            padding: 20px;
+            font-family: var(--font-body);
+            background: var(--off-white);
+            padding: 30px 20px;
+            color: var(--text-primary);
+            line-height: 1.6;
         }
         
         .container {
-            max-width: 900px;
+            max-width: 920px;
             margin: 0 auto;
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg);
             padding: 40px;
         }
         
+        /* Header */
         .header {
-            border-bottom: 3px solid #667eea;
+            border-bottom: 3px solid var(--primary-dark);
             padding-bottom: 20px;
             margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
         }
         
         h1 {
-            color: #333;
-            font-size: 32px;
-            margin-bottom: 10px;
+            font-family: var(--font-heading);
+            color: var(--text-primary);
+            font-size: 28px;
+            font-weight: 600;
+            letter-spacing: -0.02em;
         }
         
         .status-badge {
             display: inline-block;
-            padding: 8px 16px;
+            padding: 8px 18px;
             border-radius: 20px;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 600;
-            background: #667eea;
-            color: white;
+            background: var(--primary-dark);
+            color: var(--white);
         }
         
+        /* Sections */
         .info-section {
-            margin-bottom: 30px;
+            margin-bottom: 32px;
         }
         
         .info-section h2 {
-            color: #667eea;
-            font-size: 20px;
-            margin-bottom: 15px;
-            border-bottom: 2px solid #e0e0e0;
+            font-family: var(--font-heading);
+            color: var(--text-primary);
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            border-bottom: 1px solid var(--gray-light);
             padding-bottom: 10px;
         }
         
@@ -66,125 +119,169 @@
             gap: 20px;
         }
         
+        @media (max-width: 640px) {
+            .info-grid { grid-template-columns: 1fr; }
+        }
+        
         .info-item {
             display: flex;
             flex-direction: column;
         }
         
         .info-label {
-            color: #666;
-            font-size: 12px;
+            color: var(--text-muted);
+            font-size: 11px;
             text-transform: uppercase;
-            margin-bottom: 5px;
+            letter-spacing: 0.08em;
+            margin-bottom: 6px;
             font-weight: 600;
         }
         
         .info-value {
-            color: #333;
-            font-size: 16px;
+            color: var(--text-primary);
+            font-size: 15px;
+            font-weight: 500;
         }
         
+        /* Text Box (Extracted Resume Text) */
         .text-box {
-            background: #f8f9fa;
-            border: 1px solid #e0e0e0;
-            border-radius: 5px;
+            background: var(--off-white);
+            border: 1px solid var(--gray-light);
+            border-radius: var(--radius-md);
             padding: 20px;
             max-height: 400px;
             overflow-y: auto;
             white-space: pre-wrap;
-            font-family: 'Courier New', monospace;
+            font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
             font-size: 12px;
-            line-height: 1.6;
+            line-height: 1.7;
+            color: var(--text-secondary);
         }
         
+        /* Buttons */
         .btn {
-            display: inline-block;
-            background: #667eea;
-            color: white;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--primary-dark);
+            color: var(--white);
             padding: 12px 24px;
-            border-radius: 5px;
+            border-radius: var(--radius-md);
             text-decoration: none;
             font-weight: 600;
+            font-size: 14px;
             margin-top: 20px;
             margin-right: 10px;
+            transition: all 0.2s;
         }
         
         .btn:hover {
-            background: #5568d3;
+            background: var(--primary);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
         }
         
+        /* Score Grid */
         .score-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
             gap: 20px;
-            margin-bottom: 30px;
+            margin-bottom: 24px;
+        }
+        
+        @media (max-width: 640px) {
+            .score-grid { grid-template-columns: 1fr; }
         }
         
         .score-card {
-            background: #f8f9fa;
+            background: var(--off-white);
             padding: 20px;
-            border-radius: 8px;
-            border-left: 4px solid #667eea;
+            border-radius: var(--radius-md);
+            border-left: 4px solid var(--primary);
         }
         
+        .score-card:nth-child(1) { border-left-color: var(--success); }
+        .score-card:nth-child(2) { border-left-color: var(--info); }
+        .score-card:nth-child(3) { border-left-color: var(--accent-gold); }
+        .score-card:nth-child(4) { border-left-color: var(--primary-light); }
+        
         .score-label {
-            font-size: 14px;
-            color: #666;
+            font-size: 12px;
+            color: var(--text-muted);
             margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 600;
         }
         
         .score-value {
-            font-size: 28px;
-            font-weight: bold;
-            color: #333;
+            font-family: var(--font-heading);
+            font-size: 26px;
+            font-weight: 700;
+            color: var(--text-primary);
             margin-bottom: 12px;
         }
         
         .score-bar {
-            background: #e0e0e0;
-            height: 8px;
-            border-radius: 4px;
+            background: var(--gray-light);
+            height: 6px;
+            border-radius: 3px;
             overflow: hidden;
         }
         
         .score-fill {
-            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            background: var(--primary);
             height: 100%;
             transition: width 0.5s ease;
+            border-radius: 3px;
         }
         
+        .score-card:nth-child(1) .score-fill { background: var(--success); }
+        .score-card:nth-child(2) .score-fill { background: var(--info); }
+        .score-card:nth-child(3) .score-fill { background: var(--accent-gold); }
+        .score-card:nth-child(4) .score-fill { background: var(--primary-light); }
+        
+        /* Total Score */
         .total-score {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 30px;
-            border-radius: 10px;
+            background: var(--primary-dark);
+            color: var(--white);
+            padding: 28px 30px;
+            border-radius: var(--radius-lg);
             text-align: center;
-            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
         }
         
         .total-label {
-            font-weight: normal;
-            margin-right: 15px;
+            font-size: 18px;
+            font-weight: 500;
         }
         
         .total-value {
-            font-weight: bold;
+            font-family: var(--font-heading);
+            font-weight: 700;
             font-size: 36px;
+            color: var(--accent-gold);
         }
         
+        /* Analysis Section */
         .analysis-section {
-            margin-bottom: 35px;
-            padding: 25px;
-            background: #f8f9fa;
-            border-radius: 8px;
+            margin-bottom: 28px;
+            padding: 24px;
+            background: var(--off-white);
+            border-radius: var(--radius-md);
         }
         
         .analysis-title {
-            color: #333;
-            font-size: 18px;
-            margin-bottom: 20px;
+            font-family: var(--font-heading);
+            color: var(--text-primary);
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 18px;
             padding-bottom: 10px;
-            border-bottom: 2px solid #e0e0e0;
+            border-bottom: 1px solid var(--gray-light);
         }
         
         .attributes-grid {
@@ -195,33 +292,33 @@
         .attribute-item {
             display: flex;
             align-items: flex-start;
-            padding: 15px;
-            border-radius: 6px;
+            padding: 14px 16px;
+            border-radius: var(--radius-md);
             gap: 12px;
         }
         
         .attribute-item.matched {
-            background: #d4edda;
-            border-left: 4px solid #28a745;
+            background: var(--success-light);
+            border-left: 4px solid var(--success);
         }
         
         .attribute-item.missing {
-            background: #f8d7da;
-            border-left: 4px solid #dc3545;
+            background: var(--danger-light);
+            border-left: 4px solid var(--danger);
         }
         
         .attribute-icon {
-            font-size: 20px;
+            font-size: 18px;
             font-weight: bold;
             min-width: 24px;
         }
         
         .attribute-item.matched .attribute-icon {
-            color: #28a745;
+            color: var(--success);
         }
         
         .attribute-item.missing .attribute-icon {
-            color: #dc3545;
+            color: var(--danger);
         }
         
         .attribute-content {
@@ -231,141 +328,159 @@
         .attribute-content strong {
             display: block;
             margin-bottom: 4px;
-            color: #333;
+            color: var(--text-primary);
+            font-size: 14px;
         }
         
         .improvement-hint {
             display: block;
-            font-size: 13px;
-            color: #666;
+            font-size: 12px;
+            color: var(--text-muted);
             margin-top: 4px;
             font-style: italic;
         }
         
         .bonus-badge {
             display: inline-block;
-            background: #ffc107;
-            color: #000;
-            padding: 3px 8px;
+            background: var(--accent-gold);
+            color: var(--primary-dark);
+            padding: 3px 10px;
             border-radius: 10px;
             font-size: 11px;
-            font-weight: bold;
+            font-weight: 700;
             margin-left: 8px;
         }
         
+        /* Skills List */
         .skills-list {
             display: flex;
             flex-wrap: wrap;
-            gap: 6px;
-            margin-top: 10px;
+            gap: 8px;
+            margin-top: 12px;
         }
         
         .skill-tag {
             display: inline-block;
-            background: white;
-            padding: 5px 12px;
-            border-radius: 15px;
+            background: var(--white);
+            padding: 6px 14px;
+            border-radius: 16px;
             font-size: 12px;
-            border: 1px solid #28a745;
-            color: #28a745;
+            border: 1px solid var(--success);
+            color: var(--success);
+            font-weight: 500;
         }
         
         .skill-tag.if-skill {
-            background: #28a745;
-            color: white;
-            font-weight: bold;
+            background: var(--accent-gold);
+            color: var(--primary-dark);
+            border-color: var(--accent-gold);
+            font-weight: 600;
         }
         
+        /* Formula Box */
         .formula-box {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 25px;
-            border-radius: 10px;
-            margin-top: 30px;
+            background: var(--primary-dark);
+            color: var(--white);
+            padding: 24px;
+            border-radius: var(--radius-lg);
+            margin-top: 28px;
         }
         
         .formula-box h4 {
-            margin-bottom: 15px;
-            font-size: 18px;
+            font-family: var(--font-heading);
+            margin-bottom: 14px;
+            font-size: 16px;
+            font-weight: 600;
         }
         
         .formula {
-            font-size: 15px;
+            font-size: 14px;
             line-height: 1.8;
             margin-bottom: 12px;
+            opacity: 0.9;
         }
         
         .formula-calculation {
-            font-size: 14px;
-            opacity: 0.95;
+            font-size: 13px;
+            opacity: 0.85;
             padding-top: 12px;
-            border-top: 1px solid rgba(255,255,255,0.3);
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
         }
         
         .formula-calculation strong {
-            font-size: 20px;
-            color: #ffd700;
+            font-size: 18px;
+            color: var(--accent-gold);
         }
 
-        /* Job Application Styles */
+        /* Job Application Card */
         .job-application-card {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            border-left: 4px solid #667eea;
+            background: var(--off-white);
+            padding: 22px;
+            border-radius: var(--radius-md);
+            margin-bottom: 16px;
+            border-left: 4px solid var(--primary);
         }
 
         .job-title {
-            color: #667eea;
-            font-size: 20px;
-            margin-bottom: 15px;
-            font-weight: bold;
+            font-family: var(--font-heading);
+            color: var(--text-primary);
+            font-size: 18px;
+            margin-bottom: 16px;
+            font-weight: 600;
         }
 
         .job-info-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
-            margin-bottom: 15px;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        @media (max-width: 640px) {
+            .job-info-grid { grid-template-columns: 1fr; }
         }
 
         .profile-badge {
             display: inline-block;
-            background: #667eea;
-            color: white;
-            padding: 5px 12px;
-            border-radius: 15px;
-            font-size: 13px;
+            background: var(--primary);
+            color: var(--white);
+            padding: 5px 14px;
+            border-radius: 16px;
+            font-size: 12px;
             font-weight: 600;
         }
 
         .fit-score {
-            font-size: 28px;
-            font-weight: bold;
+            font-family: var(--font-heading);
+            font-size: 26px;
+            font-weight: 700;
         }
 
         .fit-score.high {
-            color: #28a745;
+            color: var(--success);
         }
 
         .fit-score.medium {
-            color: #ffc107;
+            color: var(--accent-gold);
         }
 
         .fit-score.low {
-            color: #dc3545;
+            color: var(--danger);
         }
 
         .weights-display {
-            margin-top: 15px;
-            padding-top: 15px;
-            border-top: 1px solid #e0e0e0;
+            margin-top: 16px;
+            padding-top: 14px;
+            border-top: 1px solid var(--gray-light);
         }
 
         .weights-display small {
-            color: #666;
-            font-size: 13px;
+            color: var(--text-muted);
+            font-size: 12px;
+        }
+
+        .weights-display strong {
+            color: var(--text-secondary);
         }
     </style>
 </head>
@@ -398,10 +513,10 @@
             </div>
         </div>
         
-        <!-- JOB APPLICATION SECTION - FIXED! -->
+        <!-- JOB APPLICATION SECTION -->
         {% if job_applications %}
         <div class="info-section">
-            <h2>📋 Job Application</h2>
+            <h2>Job Application</h2>
             {% for application in job_applications %}
             <div class="job-application-card">
                 <h3 class="job-title">{{ application.job_posting.title }}</h3>
@@ -428,7 +543,6 @@
                     </div>
                 </div>
                 
-                <!-- FIXED WEIGHT DISPLAY -->
                 <div class="weights-display">
                     <small>
                         <strong>Custom Scoring Weights:</strong>
@@ -503,10 +617,10 @@
         </div>
         
         <div class="info-section">
-            <h2>📋 Detailed Score Analysis</h2>
+            <h2>Detailed Score Analysis</h2>
             
             <div class="analysis-section">
-                <h3 class="analysis-title">🎓 Education (Weight: 25%)</h3>
+                <h3 class="analysis-title">Education (Weight: 25%)</h3>
                 
                 <div class="attributes-grid">
                     {% if candidate.education.exists %}
@@ -544,7 +658,7 @@
             </div>
             
             <div class="analysis-section">
-                <h3 class="analysis-title">💼 Experience (Weight: 30%)</h3>
+                <h3 class="analysis-title">Experience (Weight: 30%)</h3>
                 
                 <div class="attributes-grid">
                     <div class="attribute-item matched">
@@ -581,7 +695,7 @@
             </div>
             
             <div class="analysis-section">
-                <h3 class="analysis-title">🛠️ Skills (Weight: 25%)</h3>
+                <h3 class="analysis-title">Skills (Weight: 25%)</h3>
                 
                 <div class="attributes-grid">
                     {% if candidate.extracted_skills.exists %}
@@ -621,7 +735,7 @@
             </div>
             
             <div class="analysis-section">
-                <h3 class="analysis-title">☪️ Islamic Finance Expertise (Weight: 20%)</h3>
+                <h3 class="analysis-title">Islamic Finance Expertise (Weight: 20%)</h3>
                 
                 <div class="attributes-grid">
                     {% if candidate.score.islamic_finance_score >= 40 %}
@@ -675,7 +789,7 @@
             </div>
             
             <div class="formula-box">
-                <h4>📊 Scoring Formula</h4>
+                <h4>Scoring Formula</h4>
                 <div class="formula">
                     <strong>Total Score</strong> = 
                     (Education × 0.25) + 

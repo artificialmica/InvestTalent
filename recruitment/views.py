@@ -615,7 +615,7 @@ from .job_matching import match_candidate_to_job, match_all_candidates, save_app
 
 
 def job_list(request):
-    """List all job postings - styled to match dashboard."""
+    """List all job postings - styled with navy/gold theme."""
     jobs = JobPosting.objects.filter(is_active=True).select_related('role_profile')
     
     rows = ""
@@ -626,43 +626,43 @@ def job_list(request):
         req_count = job.role_profile.required_skills.count() if job.role_profile else 0
         pref_count = job.role_profile.preferred_skills.count() if job.role_profile else 0
         
-        # Score badge color
         if avg >= 70:
-            score_style = "background: linear-gradient(135deg, #28a745, #20c997); color: white;"
+            score_style = "background: #2D8659; color: white;"
         elif avg >= 50:
-            score_style = "background: linear-gradient(135deg, #ffc107, #fd7e14); color: #333;"
+            score_style = "background: #C9A227; color: #1B3C53;"
         elif count > 0:
-            score_style = "background: #f8d7da; color: #721c24;"
+            score_style = "background: #FCEAEA; color: #C23B3B;"
         else:
-            score_style = "background: #e9ecef; color: #6c757d;"
+            score_style = "background: #E3E3E3; color: #6B7C88;"
         
         rows += f'''
-        <tr style="border-bottom: 1px solid #eee; transition: background 0.2s;" onmouseover="this.style.background='#f8f9ff'" onmouseout="this.style.background='white'">
-            <td style="padding: 18px 15px;">
-                <a href="/jobs/{job.id}/" style="color: #667eea; font-weight: 600; text-decoration: none; font-size: 15px;">{job.title}</a>
-                <br><small style="color: #888;">{job.department or "No department"}</small>
+        <tr style="border-bottom: 1px solid rgba(227,227,227,0.5); transition: background 0.2s;" onmouseover="this.style.background='rgba(35,76,106,0.02)'" onmouseout="this.style.background='white'">
+            <td style="padding: 18px 16px;">
+                <a href="/jobs/{job.id}/" style="color: #234C6A; font-weight: 600; text-decoration: none; font-size: 15px;">{job.title}</a>
+                <br><small style="color: #6B7C88;">{job.department or "No department"}</small>
             </td>
-            <td style="padding: 18px 15px; text-align: center;">
-                <span style="background: #fee2e2; color: #991b1b; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600;">{req_count}</span>
+            <td style="padding: 18px 16px; text-align: center;">
+                <span style="background: #FCEAEA; color: #C23B3B; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600;">{req_count}</span>
             </td>
-            <td style="padding: 18px 15px; text-align: center;">
-                <span style="background: #d1fae5; color: #065f46; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600;">{pref_count}</span>
+            <td style="padding: 18px 16px; text-align: center;">
+                <span style="background: #E8F5EE; color: #2D8659; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600;">{pref_count}</span>
             </td>
-            <td style="padding: 18px 15px; text-align: center; font-weight: 600; color: #333;">{count}</td>
-            <td style="padding: 18px 15px; text-align: center;">
+            <td style="padding: 18px 16px; text-align: center; font-weight: 600; color: #1B3C53;">{count}</td>
+            <td style="padding: 18px 16px; text-align: center;">
                 <span style="{score_style} padding: 6px 14px; border-radius: 20px; font-weight: bold; font-size: 13px;">{avg:.0f}%</span>
             </td>
-            <td style="padding: 18px 15px; text-align: center;">
-                <a href="/jobs/{job.id}/match/" style="background: #28a745; color: white; padding: 6px 12px; border-radius: 5px; text-decoration: none; font-size: 12px; margin-right: 5px;">🔄 Match</a>
-                <a href="/jobs/{job.id}/" style="background: #667eea; color: white; padding: 6px 12px; border-radius: 5px; text-decoration: none; font-size: 12px;">View</a>
+            <td style="padding: 18px 16px; text-align: center;">
+                <a href="/jobs/{job.id}/match/" style="background: #2D8659; color: white; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 12px; margin-right: 5px; font-weight: 500;">Match</a>
+                <a href="/jobs/{job.id}/" style="background: #1B3C53; color: white; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 12px; font-weight: 500;">View</a>
             </td>
         </tr>'''
     
-    # Calculate stats
     total_jobs = len(jobs)
     total_matches = sum(CandidateJobApplication.objects.filter(job_posting=j).count() for j in jobs)
     jobs_with_qualified = sum(1 for j in jobs if CandidateJobApplication.objects.filter(job_posting=j, job_fit_score__gte=50).exists())
     total_candidates = Candidate.objects.count()
+    
+    empty_row = '<tr><td colspan="6" style="padding: 50px; text-align: center; color: #6B7C88;"><h3 style="font-family: Playfair Display, serif; color: #456882;">No job postings yet</h3><p style="margin-top:10px;">Create your first job to start matching candidates</p><a href="/jobs/create/" style="display:inline-block;margin-top:15px;background:#1B3C53;color:white;padding:10px 20px;border-radius:6px;text-decoration:none;font-weight:500;">Create Job</a></td></tr>'
     
     html = f'''
     <!DOCTYPE html>
@@ -671,110 +671,62 @@ def job_list(request):
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Job Postings - InvestTalent-AI</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
         <style>
             * {{ margin: 0; padding: 0; box-sizing: border-box; }}
-            body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f7fa; }}
-            .navbar {{
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                color: white;
-                padding: 20px 40px;
-                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            }}
-            .navbar h1 {{ font-size: 24px; margin-bottom: 5px; }}
-            .navbar p {{ opacity: 0.9; font-size: 14px; }}
-            .nav-links {{ margin-top: 15px; }}
-            .nav-links a {{ color: white; text-decoration: none; margin-right: 25px; opacity: 0.9; font-weight: 500; }}
-            .nav-links a:hover {{ opacity: 1; }}
-            .nav-links a.active {{ opacity: 1; font-weight: 700; border-bottom: 2px solid white; padding-bottom: 5px; }}
+            body {{ font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: #F8F9FA; color: #1B3C53; }}
+            .navbar {{ background: #1B3C53; color: white; padding: 20px 40px; box-shadow: 0 4px 12px rgba(27,60,83,0.08); }}
+            .navbar h1 {{ font-family: 'Playfair Display', Georgia, serif; font-size: 24px; margin-bottom: 4px; font-weight: 600; }}
+            .navbar p {{ opacity: 0.8; font-size: 13px; }}
+            .nav-links {{ margin-top: 12px; display: flex; gap: 8px; }}
+            .nav-links a {{ color: white; text-decoration: none; padding: 6px 14px; border-radius: 6px; opacity: 0.85; font-size: 13px; font-weight: 500; transition: all 0.2s; }}
+            .nav-links a:hover {{ opacity: 1; background: rgba(255,255,255,0.15); }}
+            .nav-links a.active {{ opacity: 1; background: rgba(255,255,255,0.2); font-weight: 600; }}
             .container {{ max-width: 1200px; margin: 0 auto; padding: 30px 40px; }}
-            .header-row {{ display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }}
-            .btn-create {{
-                background: linear-gradient(135deg, #28a745, #20c997);
-                color: white;
-                padding: 12px 24px;
-                border-radius: 8px;
-                text-decoration: none;
-                font-weight: 600;
-                box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
-                transition: transform 0.2s, box-shadow 0.2s;
-            }}
-            .btn-create:hover {{ transform: translateY(-2px); box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4); }}
-            .stats-row {{ display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 25px; }}
-            .stat-card {{
-                background: white;
-                padding: 20px;
-                border-radius: 10px;
-                box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-                text-align: center;
-                border-left: 4px solid #667eea;
-            }}
-            .stat-card .value {{ font-size: 28px; font-weight: bold; color: #333; }}
-            .stat-card .label {{ font-size: 12px; color: #888; text-transform: uppercase; margin-top: 5px; }}
-            .table-card {{
-                background: white;
-                border-radius: 12px;
-                box-shadow: 0 2px 12px rgba(0,0,0,0.08);
-                overflow: hidden;
-            }}
+            .header-row {{ display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }}
+            .header-row h2 {{ font-family: 'Playfair Display', Georgia, serif; color: #1B3C53; font-size: 22px; font-weight: 600; }}
+            .btn-create {{ background: #C9A227; color: #1B3C53; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px; box-shadow: 0 4px 12px rgba(201,162,39,0.3); transition: all 0.2s; }}
+            .btn-create:hover {{ transform: translateY(-1px); box-shadow: 0 6px 16px rgba(201,162,39,0.4); }}
+            .stats-row {{ display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }}
+            .stat-card {{ background: white; padding: 20px; border-radius: 8px; box-shadow: 0 1px 2px rgba(27,60,83,0.05); text-align: center; border-left: 4px solid #234C6A; }}
+            .stat-card .value {{ font-family: 'Playfair Display', Georgia, serif; font-size: 28px; font-weight: 700; color: #1B3C53; }}
+            .stat-card .label {{ font-size: 11px; color: #6B7C88; text-transform: uppercase; letter-spacing: 0.08em; margin-top: 6px; font-weight: 600; }}
+            .table-card {{ background: white; border-radius: 12px; box-shadow: 0 4px 12px rgba(27,60,83,0.08); overflow: hidden; }}
             table {{ width: 100%; border-collapse: collapse; }}
-            thead {{ background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }}
-            th {{ padding: 15px; text-align: left; color: white; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }}
+            thead {{ background: #1B3C53; }}
+            th {{ padding: 14px 16px; text-align: left; color: white; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; }}
             th:nth-child(2), th:nth-child(3), th:nth-child(4), th:nth-child(5), th:nth-child(6) {{ text-align: center; }}
             tbody tr {{ background: white; }}
         </style>
     </head>
     <body>
         <div class="navbar">
-            <h1>💼 Job Postings</h1>
+            <h1>Job Postings</h1>
             <p>Manage job requirements and match candidates</p>
             <div class="nav-links">
-                <a href="/">📋 Candidates</a>
-                <a href="/jobs/" class="active">💼 Job Postings</a>
-                <a href="/analytics/">📊 Analytics</a>
-                <a href="/fairness/">⚖️ Fairness</a>
+                <a href="/">Candidates</a>
+                <a href="/jobs/" class="active">Job Postings</a>
+                <a href="/analytics/">Analytics</a>
+                <a href="/fairness/">Fairness</a>
             </div>
         </div>
-        
         <div class="container">
             <div class="header-row">
-                <h2 style="color: #333;">Active Positions</h2>
-                <a href="/jobs/create/" class="btn-create">➕ Create New Job</a>
+                <h2>Active Positions</h2>
+                <a href="/jobs/create/" class="btn-create">+ Create New Job</a>
             </div>
-            
             <div class="stats-row">
-                <div class="stat-card">
-                    <div class="value">{total_jobs}</div>
-                    <div class="label">Active Jobs</div>
-                </div>
-                <div class="stat-card">
-                    <div class="value">{total_matches}</div>
-                    <div class="label">Total Matches</div>
-                </div>
-                <div class="stat-card">
-                    <div class="value">{jobs_with_qualified}</div>
-                    <div class="label">Jobs with Qualified</div>
-                </div>
-                <div class="stat-card">
-                    <div class="value">{total_candidates}</div>
-                    <div class="label">Total Candidates</div>
-                </div>
+                <div class="stat-card"><div class="value">{total_jobs}</div><div class="label">Active Jobs</div></div>
+                <div class="stat-card"><div class="value">{total_matches}</div><div class="label">Total Matches</div></div>
+                <div class="stat-card"><div class="value">{jobs_with_qualified}</div><div class="label">Jobs with Qualified</div></div>
+                <div class="stat-card"><div class="value">{total_candidates}</div><div class="label">Total Candidates</div></div>
             </div>
-            
             <div class="table-card">
                 <table>
-                    <thead>
-                        <tr>
-                            <th>Job Title</th>
-                            <th>Required</th>
-                            <th>Preferred</th>
-                            <th>Candidates</th>
-                            <th>Avg Score</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {rows if rows else '<tr><td colspan="6" style="padding: 50px; text-align: center; color: #888;"><h3>No job postings yet</h3><p style="margin-top:10px;">Create your first job to start matching candidates</p><a href="/jobs/create/" style="display:inline-block;margin-top:15px;background:#667eea;color:white;padding:10px 20px;border-radius:5px;text-decoration:none;">Create Job</a></td></tr>'}
-                    </tbody>
+                    <thead><tr><th>Job Title</th><th>Required</th><th>Preferred</th><th>Candidates</th><th>Avg Score</th><th>Actions</th></tr></thead>
+                    <tbody>{rows if rows else empty_row}</tbody>
                 </table>
             </div>
         </div>
@@ -785,23 +737,20 @@ def job_list(request):
 
 
 def job_create(request):
-    """Create a job posting."""
+    """Create a job posting - styled with navy/gold theme."""
     if request.method == 'POST':
         title = request.POST.get('title', '').strip()
         department = request.POST.get('department', '').strip()
         min_exp = int(request.POST.get('min_experience', 0))
         domain = request.POST.get('domain', 'General')
         
-        # Create role profile
         profile = JobRoleProfile.objects.create(name=f"{title} Profile", min_experience=min_exp, domain=domain)
         
-        # Add skills
         req_ids = request.POST.getlist('required_skills')
         pref_ids = request.POST.getlist('preferred_skills')
         if req_ids: profile.required_skills.set(req_ids)
         if pref_ids: profile.preferred_skills.set(pref_ids)
         
-        # Create job
         job = JobPosting.objects.create(
             title=title, department=department, role_profile=profile,
             education_weight=float(request.POST.get('education_weight', 20))/100,
@@ -814,13 +763,15 @@ def job_create(request):
         
         return redirect('job_match', job_id=job.pk)
     
-    # Build skill checkboxes
     skill_html = ""
     for cat in SkillCategory.objects.all():
         skills = SkillDefinition.objects.filter(category=cat).order_by('canonical_name')[:20]
         if skills:
-            boxes = "".join([f'<label style="display:inline-block;margin:3px;padding:4px 8px;background:#f0f0f0;border-radius:10px;font-size:12px;cursor:pointer;"><input type="checkbox" name="required_skills" value="{s.id}" style="margin-right:4px;">{s.canonical_name}</label>' for s in skills])
-            skill_html += f'<div style="margin-bottom:10px;"><strong style="color:#667eea;">{cat.name.title()}</strong><div>{boxes}</div></div>'
+            boxes = "".join([f'<label style="display:inline-block;margin:3px;padding:4px 8px;background:#F8F9FA;border-radius:8px;font-size:12px;cursor:pointer;border:1px solid #E3E3E3;transition:all 0.2s;"><input type="checkbox" name="required_skills" value="{s.id}" style="margin-right:4px;">{s.canonical_name}</label>' for s in skills])
+            skill_html += f'<div style="margin-bottom:12px;"><strong style="color:#234C6A;font-size:13px;">{cat.name.title()}</strong><div style="margin-top:6px;">{boxes}</div></div>'
+    
+    empty_skills = '<p style="color:#6B7C88;">No skills in database yet.</p>'
+    csrf_token = request.META.get('CSRF_COOKIE', '')
     
     html = f'''
     <!DOCTYPE html>
@@ -829,37 +780,34 @@ def job_create(request):
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Create Job - InvestTalent-AI</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
         <style>
             * {{ margin: 0; padding: 0; box-sizing: border-box; }}
-            body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f7fa; }}
-            .navbar {{
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                color: white;
-                padding: 20px 40px;
-                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            }}
-            .navbar h1 {{ font-size: 24px; margin-bottom: 5px; }}
+            body {{ font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: #F8F9FA; color: #1B3C53; }}
+            .navbar {{ background: #1B3C53; color: white; padding: 20px 40px; box-shadow: 0 4px 12px rgba(27,60,83,0.08); }}
+            .navbar h1 {{ font-family: 'Playfair Display', Georgia, serif; font-size: 24px; font-weight: 600; }}
             .container {{ max-width: 800px; margin: 0 auto; padding: 30px 40px; }}
-            .form-card {{ background: white; padding: 25px; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); margin-bottom: 20px; }}
-            .form-card h3 {{ color: #333; margin-bottom: 15px; font-size: 16px; border-bottom: 2px solid #667eea; padding-bottom: 10px; }}
-            input[type="text"], input[type="number"], select {{ width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; margin-bottom: 15px; }}
-            input[type="text"]:focus, select:focus {{ outline: none; border-color: #667eea; }}
-            .btn-submit {{ background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 14px 30px; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; }}
-            .btn-submit:hover {{ transform: translateY(-2px); box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4); }}
-            .btn-cancel {{ color: #666; text-decoration: none; margin-left: 15px; }}
+            .form-card {{ background: white; padding: 24px; border-radius: 12px; box-shadow: 0 4px 12px rgba(27,60,83,0.08); margin-bottom: 20px; }}
+            .form-card h3 {{ color: #1B3C53; margin-bottom: 16px; font-size: 15px; border-bottom: 2px solid #C9A227; padding-bottom: 10px; font-family: 'Playfair Display', Georgia, serif; }}
+            input[type="text"], input[type="number"], select {{ width: 100%; padding: 12px; border: 1px solid #E3E3E3; border-radius: 8px; font-size: 14px; margin-bottom: 15px; font-family: 'Inter', sans-serif; }}
+            input[type="text"]:focus, select:focus {{ outline: none; border-color: #234C6A; box-shadow: 0 0 0 3px rgba(35,76,106,0.1); }}
+            .btn-submit {{ background: #1B3C53; color: white; padding: 14px 30px; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s; }}
+            .btn-submit:hover {{ background: #234C6A; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(27,60,83,0.2); }}
+            .btn-cancel {{ color: #6B7C88; text-decoration: none; margin-left: 15px; font-weight: 500; }}
+            .btn-cancel:hover {{ color: #1B3C53; }}
         </style>
     </head>
     <body>
         <div class="navbar">
-            <h1>➕ Create Job Posting</h1>
+            <h1>Create Job Posting</h1>
         </div>
-        
         <div class="container">
             <form method="post">
-                <input type="hidden" name="csrfmiddlewaretoken" value="{request.META.get('CSRF_COOKIE', '')}">
-                
+                <input type="hidden" name="csrfmiddlewaretoken" value="{csrf_token}">
                 <div class="form-card">
-                    <h3>📋 Basic Information</h3>
+                    <h3>Basic Information</h3>
                     <input type="text" name="title" placeholder="Job Title *" required>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                         <input type="text" name="department" placeholder="Department">
@@ -871,31 +819,28 @@ def job_create(request):
                         </select>
                     </div>
                     <div>
-                        <label style="color: #666; font-size: 14px;">Minimum Experience Required:</label>
+                        <label style="color: #6B7C88; font-size: 13px;">Minimum Experience Required:</label>
                         <input type="number" name="min_experience" value="0" min="0" style="width: 100px;"> years
                     </div>
                 </div>
-                
                 <div class="form-card">
-                    <h3>🔴 Required Skills</h3>
-                    <div style="max-height: 250px; overflow-y: auto; border: 1px solid #eee; padding: 15px; border-radius: 8px;">
-                        {skill_html if skill_html else '<p style="color:#888;">No skills in database yet.</p>'}
+                    <h3>Required Skills</h3>
+                    <div style="max-height: 250px; overflow-y: auto; border: 1px solid #E3E3E3; padding: 15px; border-radius: 8px;">
+                        {skill_html if skill_html else empty_skills}
                     </div>
                 </div>
-                
                 <div class="form-card">
-                    <h3>⚙️ Scoring Weights</h3>
+                    <h3>Scoring Weights</h3>
                     <input type="hidden" name="education_weight" value="20">
                     <input type="hidden" name="experience_weight" value="25">
                     <input type="hidden" name="skills_weight" value="25">
                     <input type="hidden" name="hard_skills_weight" value="15">
                     <input type="hidden" name="soft_skills_weight" value="10">
                     <input type="hidden" name="domain_weight" value="5">
-                    <p style="color: #666; font-size: 13px;">
-                        📚 Education: 20% | 💼 Experience: 25% | 🔧 Skills: 25% | 💪 Hard Skills: 15% | 🤝 Soft Skills: 10% | 🏢 Domain: 5%
+                    <p style="color: #6B7C88; font-size: 13px;">
+                        Education: 20% | Experience: 25% | Skills: 25% | Hard Skills: 15% | Soft Skills: 10% | Domain: 5%
                     </p>
                 </div>
-                
                 <button type="submit" class="btn-submit">Create & Match Candidates</button>
                 <a href="/jobs/" class="btn-cancel">Cancel</a>
             </form>
@@ -907,77 +852,85 @@ def job_create(request):
 
 
 def job_detail(request, job_id):
-    """Show job with matched candidates - styled to match dashboard."""
+    """Show job with matched candidates - styled with navy/gold theme."""
     job = get_object_or_404(JobPosting.objects.select_related('role_profile'), pk=job_id)
     apps = CandidateJobApplication.objects.filter(job_posting=job).select_related('candidate').order_by('-job_fit_score')
     
-    # Skills badges
     req_skills = pref_skills = ""
     if job.role_profile:
-        req_skills = "".join([f'<span style="background:#fee2e2;color:#991b1b;padding:6px 12px;border-radius:15px;font-size:12px;margin:3px;display:inline-block;font-weight:500;">{s.canonical_name}</span>' for s in job.role_profile.required_skills.all()])
-        pref_skills = "".join([f'<span style="background:#d1fae5;color:#065f46;padding:6px 12px;border-radius:15px;font-size:12px;margin:3px;display:inline-block;font-weight:500;">{s.canonical_name}</span>' for s in job.role_profile.preferred_skills.all()])
+        req_skills = "".join([f'<span style="background:#FCEAEA;color:#C23B3B;padding:6px 12px;border-radius:15px;font-size:12px;margin:3px;display:inline-block;font-weight:500;">{s.canonical_name}</span>' for s in job.role_profile.required_skills.all()])
+        pref_skills = "".join([f'<span style="background:#E8F5EE;color:#2D8659;padding:6px 12px;border-radius:15px;font-size:12px;margin:3px;display:inline-block;font-weight:500;">{s.canonical_name}</span>' for s in job.role_profile.preferred_skills.all()])
     
-    # Stats
     total_candidates = apps.count()
     avg_score = sum(a.job_fit_score for a in apps) / total_candidates if total_candidates > 0 else 0
     top_score = apps.first().job_fit_score if apps.exists() else 0
     qualified_count = sum(1 for a in apps if a.job_fit_score >= 50)
     
-    # Candidate rows
     rows = ""
     for i, app in enumerate(apps, 1):
         c = app.candidate
         score = app.job_fit_score
         
-        # Rank badge
         if i == 1:
-            rank_style = "background: linear-gradient(135deg, #FFD700, #FFA500); color: white;"
-            rank_icon = "🥇"
+            rank_style = "background: #C9A227; color: #1B3C53;"
+            rank_icon = "#1"
         elif i == 2:
-            rank_style = "background: linear-gradient(135deg, #C0C0C0, #A8A8A8); color: white;"
-            rank_icon = "🥈"
+            rank_style = "background: #9AACB8; color: white;"
+            rank_icon = "#2"
         elif i == 3:
-            rank_style = "background: linear-gradient(135deg, #CD7F32, #B87333); color: white;"
-            rank_icon = "🥉"
+            rank_style = "background: #B87333; color: white;"
+            rank_icon = "#3"
         else:
-            rank_style = "background: #e0e0e0; color: #666;"
+            rank_style = "background: #E3E3E3; color: #6B7C88;"
             rank_icon = f"#{i}"
         
-        # Score badge
         if score >= 70:
-            score_style = "background: linear-gradient(135deg, #28a745, #20c997); color: white;"
+            score_style = "background: #2D8659; color: white;"
             status = "Strong Match"
         elif score >= 50:
-            score_style = "background: linear-gradient(135deg, #ffc107, #fd7e14); color: #333;"
+            score_style = "background: #C9A227; color: #1B3C53;"
             status = "Qualified"
         elif score >= 30:
-            score_style = "background: #fff3cd; color: #856404;"
+            score_style = "background: #FDF6E3; color: #D4A012;"
             status = "Review"
         else:
-            score_style = "background: #f8d7da; color: #721c24;"
+            score_style = "background: #FCEAEA; color: #C23B3B;"
             status = "Low Match"
         
+        position = c.current_position or '<span style="color:#9AACB8;">Not specified</span>'
+        
         rows += f'''
-        <tr style="border-bottom: 1px solid #eee; transition: all 0.2s;" onmouseover="this.style.background='#f8f9ff';this.style.transform='scale(1.005)'" onmouseout="this.style.background='white';this.style.transform='scale(1)'">
-            <td style="padding: 18px 15px; text-align: center;">
-                <span style="{rank_style} display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; font-weight: bold; font-size: 14px;">{rank_icon}</span>
+        <tr style="border-bottom: 1px solid rgba(227,227,227,0.5); transition: all 0.2s;" onmouseover="this.style.background='rgba(35,76,106,0.02)'" onmouseout="this.style.background='white'">
+            <td style="padding: 18px 16px; text-align: center;">
+                <span style="{rank_style} display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; font-weight: bold; font-size: 13px;">{rank_icon}</span>
             </td>
-            <td style="padding: 18px 15px;">
-                <a href="/candidate/{c.id}/" style="color: #667eea; font-weight: 600; text-decoration: none; font-size: 15px;">{c.name}</a>
-                <br><small style="color: #888;">{c.email}</small>
+            <td style="padding: 18px 16px;">
+                <a href="/candidate/{c.id}/" style="color: #234C6A; font-weight: 600; text-decoration: none; font-size: 15px;">{c.name}</a>
+                <br><small style="color: #6B7C88;">{c.email}</small>
             </td>
-            <td style="padding: 18px 15px; color: #555;">{c.current_position or "<span style='color:#ccc;'>Not specified</span>"}</td>
-            <td style="padding: 18px 15px; text-align: center;">
-                <span style="background: #e3f2fd; color: #1565c0; padding: 5px 12px; border-radius: 12px; font-weight: 600;">{c.years_experience or 0} yrs</span>
+            <td style="padding: 18px 16px; color: #456882;">{position}</td>
+            <td style="padding: 18px 16px; text-align: center;">
+                <span style="background: #E8F4F8; color: #2D7D9A; padding: 5px 12px; border-radius: 12px; font-weight: 600;">{c.years_experience or 0} yrs</span>
             </td>
-            <td style="padding: 18px 15px; text-align: center;">
+            <td style="padding: 18px 16px; text-align: center;">
                 <div style="{score_style} padding: 8px 16px; border-radius: 20px; font-weight: bold; font-size: 16px; display: inline-block;">{score:.0f}%</div>
-                <div style="font-size: 11px; color: #888; margin-top: 4px;">{status}</div>
+                <div style="font-size: 11px; color: #6B7C88; margin-top: 4px;">{status}</div>
             </td>
-            <td style="padding: 18px 15px; text-align: center;">
-                <a href="/candidate/{c.id}/" style="background: #667eea; color: white; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-size: 12px; font-weight: 500;">View Profile</a>
+            <td style="padding: 18px 16px; text-align: center;">
+                <a href="/candidate/{c.id}/" style="background: #1B3C53; color: white; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-size: 12px; font-weight: 500;">View Profile</a>
             </td>
         </tr>'''
+    
+    empty_table = '<tr><td colspan="6" style="padding: 50px; text-align: center; color: #6B7C88;"><h3 style="font-family: Playfair Display, serif; color: #456882;">No candidates matched yet</h3><p style="margin-top:10px;">Click "Re-Match All Candidates" to run the matching algorithm</p></td></tr>'
+    no_req = '<span style="color:#9AACB8;">No required skills specified</span>'
+    no_pref = '<span style="color:#9AACB8;">No preferred skills specified</span>'
+    
+    job_date = job.created_at.strftime("%b %d, %Y") if job.created_at else "N/A"
+    job_domain = job.role_profile.domain if job.role_profile else "General"
+    job_min_exp = job.role_profile.min_experience if job.role_profile else 0
+    req_count = job.role_profile.required_skills.count() if job.role_profile else 0
+    pref_count = job.role_profile.preferred_skills.count() if job.role_profile else 0
+    cand_word = "candidates" if total_candidates != 1 else "candidate"
     
     html = f'''
     <!DOCTYPE html>
@@ -986,156 +939,93 @@ def job_detail(request, job_id):
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>{job.title} - InvestTalent-AI</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
         <style>
             * {{ margin: 0; padding: 0; box-sizing: border-box; }}
-            body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f7fa; }}
-            .navbar {{
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                color: white;
-                padding: 20px 40px;
-                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            }}
-            .navbar h1 {{ font-size: 24px; margin-bottom: 5px; }}
-            .navbar p {{ opacity: 0.9; font-size: 14px; }}
-            .nav-links {{ margin-top: 15px; }}
-            .nav-links a {{ color: white; text-decoration: none; margin-right: 25px; opacity: 0.9; font-weight: 500; }}
-            .nav-links a:hover {{ opacity: 1; }}
+            body {{ font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: #F8F9FA; color: #1B3C53; }}
+            .navbar {{ background: #1B3C53; color: white; padding: 20px 40px; box-shadow: 0 4px 12px rgba(27,60,83,0.08); }}
+            .navbar h1 {{ font-family: 'Playfair Display', Georgia, serif; font-size: 24px; margin-bottom: 4px; font-weight: 600; }}
+            .navbar p {{ opacity: 0.8; font-size: 13px; }}
+            .nav-links {{ margin-top: 12px; display: flex; gap: 8px; }}
+            .nav-links a {{ color: white; text-decoration: none; padding: 6px 14px; border-radius: 6px; opacity: 0.85; font-size: 13px; font-weight: 500; transition: all 0.2s; }}
+            .nav-links a:hover {{ opacity: 1; background: rgba(255,255,255,0.15); }}
             .container {{ max-width: 1200px; margin: 0 auto; padding: 30px 40px; }}
-            .back-link {{ color: #667eea; text-decoration: none; font-weight: 500; display: inline-flex; align-items: center; gap: 5px; }}
+            .back-link {{ color: #234C6A; text-decoration: none; font-weight: 500; display: inline-flex; align-items: center; gap: 5px; font-size: 14px; }}
             .back-link:hover {{ text-decoration: underline; }}
             .job-header {{ display: flex; justify-content: space-between; align-items: flex-start; margin: 20px 0 25px 0; }}
-            .job-title {{ font-size: 28px; color: #333; margin-bottom: 8px; }}
-            .job-meta {{ color: #666; font-size: 14px; }}
+            .job-title {{ font-family: 'Playfair Display', Georgia, serif; font-size: 28px; color: #1B3C53; margin-bottom: 8px; font-weight: 600; }}
+            .job-meta {{ color: #6B7C88; font-size: 14px; }}
             .job-meta span {{ margin-right: 20px; }}
-            .btn-match {{
-                background: linear-gradient(135deg, #28a745, #20c997);
-                color: white;
-                padding: 12px 24px;
-                border-radius: 8px;
-                text-decoration: none;
-                font-weight: 600;
-                box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
-                transition: transform 0.2s;
-            }}
-            .btn-match:hover {{ transform: translateY(-2px); }}
-            .stats-row {{ display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 25px; }}
-            .stat-card {{
-                background: white;
-                padding: 20px;
-                border-radius: 12px;
-                box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-                text-align: center;
-                border-left: 4px solid #667eea;
-            }}
-            .stat-card .value {{ font-size: 32px; font-weight: bold; color: #333; }}
-            .stat-card .label {{ font-size: 12px; color: #888; text-transform: uppercase; margin-top: 5px; letter-spacing: 0.5px; }}
-            .skills-section {{ display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 25px; }}
-            .skills-card {{
-                background: white;
-                padding: 20px;
-                border-radius: 12px;
-                box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-            }}
-            .skills-card h3 {{ font-size: 14px; color: #333; margin-bottom: 15px; display: flex; align-items: center; gap: 8px; }}
-            .skills-card h3 .count {{ background: #667eea; color: white; padding: 2px 8px; border-radius: 10px; font-size: 11px; }}
-            .table-card {{
-                background: white;
-                border-radius: 12px;
-                box-shadow: 0 2px 12px rgba(0,0,0,0.08);
-                overflow: hidden;
-            }}
-            .table-header {{
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                color: white;
-                padding: 20px;
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-            }}
-            .table-header h3 {{ font-size: 16px; }}
+            .btn-match {{ background: #2D8659; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600; box-shadow: 0 4px 12px rgba(45,134,89,0.3); transition: all 0.2s; }}
+            .btn-match:hover {{ transform: translateY(-1px); box-shadow: 0 6px 16px rgba(45,134,89,0.4); }}
+            .stats-row {{ display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }}
+            .stat-card {{ background: white; padding: 20px; border-radius: 8px; box-shadow: 0 1px 2px rgba(27,60,83,0.05); text-align: center; border-left: 4px solid #234C6A; }}
+            .stat-card .value {{ font-family: 'Playfair Display', Georgia, serif; font-size: 28px; font-weight: 700; color: #1B3C53; }}
+            .stat-card .label {{ font-size: 11px; color: #6B7C88; text-transform: uppercase; letter-spacing: 0.08em; margin-top: 6px; font-weight: 600; }}
+            .skills-section {{ display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }}
+            .skills-card {{ background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(27,60,83,0.08); }}
+            .skills-card h3 {{ font-size: 14px; color: #1B3C53; margin-bottom: 15px; display: flex; align-items: center; gap: 8px; }}
+            .skills-card h3 .count {{ background: #234C6A; color: white; padding: 2px 8px; border-radius: 10px; font-size: 11px; }}
+            .table-card {{ background: white; border-radius: 12px; box-shadow: 0 4px 12px rgba(27,60,83,0.08); overflow: hidden; }}
+            .table-header {{ background: #1B3C53; color: white; padding: 20px; display: flex; justify-content: space-between; align-items: center; }}
+            .table-header h3 {{ font-size: 16px; font-family: 'Playfair Display', Georgia, serif; }}
             table {{ width: 100%; border-collapse: collapse; }}
-            thead {{ background: #f8f9fa; }}
-            th {{ padding: 15px; text-align: left; color: #666; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; border-bottom: 2px solid #e0e0e0; }}
+            thead {{ background: #F8F9FA; }}
+            th {{ padding: 14px 16px; text-align: left; color: #6B7C88; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; border-bottom: 2px solid #E3E3E3; }}
             th:nth-child(1), th:nth-child(4), th:nth-child(5), th:nth-child(6) {{ text-align: center; }}
-            tbody tr {{ background: white; cursor: pointer; }}
+            tbody tr {{ background: white; }}
         </style>
     </head>
     <body>
         <div class="navbar">
-            <h1>💼 {job.title}</h1>
-            <p>{job.department or "No department"} • Created {job.created_at.strftime("%b %d, %Y") if job.created_at else "N/A"}</p>
+            <h1>{job.title}</h1>
+            <p>{job.department or "No department"} - Created {job_date}</p>
             <div class="nav-links">
-                <a href="/">📋 Candidates</a>
-                <a href="/jobs/">💼 Job Postings</a>
-                <a href="/analytics/">📊 Analytics</a>
-                <a href="/fairness/">⚖️ Fairness</a>
+                <a href="/">Candidates</a>
+                <a href="/jobs/">Job Postings</a>
+                <a href="/analytics/">Analytics</a>
+                <a href="/fairness/">Fairness</a>
             </div>
         </div>
-        
         <div class="container">
             <a href="/jobs/" class="back-link">← Back to All Jobs</a>
-            
             <div class="job-header">
                 <div>
                     <h1 class="job-title">{job.title}</h1>
                     <div class="job-meta">
-                        <span>🏢 {job.department or "No department"}</span>
-                        <span>📊 {job.role_profile.domain if job.role_profile else "General"}</span>
-                        <span>⏱️ Min {job.role_profile.min_experience if job.role_profile else 0} years experience</span>
+                        <span>{job.department or "No department"}</span>
+                        <span>{job_domain}</span>
+                        <span>Min {job_min_exp} years experience</span>
                     </div>
                 </div>
-                <a href="/jobs/{job.id}/match/" class="btn-match">🔄 Re-Match All Candidates</a>
+                <a href="/jobs/{job.id}/match/" class="btn-match">Re-Match All Candidates</a>
             </div>
-            
             <div class="stats-row">
-                <div class="stat-card">
-                    <div class="value">{total_candidates}</div>
-                    <div class="label">Total Matched</div>
-                </div>
-                <div class="stat-card">
-                    <div class="value" style="color: #28a745;">{qualified_count}</div>
-                    <div class="label">Qualified (≥50%)</div>
-                </div>
-                <div class="stat-card">
-                    <div class="value">{avg_score:.0f}%</div>
-                    <div class="label">Average Score</div>
-                </div>
-                <div class="stat-card">
-                    <div class="value" style="color: #667eea;">{top_score:.0f}%</div>
-                    <div class="label">Top Score</div>
-                </div>
+                <div class="stat-card"><div class="value">{total_candidates}</div><div class="label">Total Matched</div></div>
+                <div class="stat-card"><div class="value" style="color: #2D8659;">{qualified_count}</div><div class="label">Qualified (50%+)</div></div>
+                <div class="stat-card"><div class="value">{avg_score:.0f}%</div><div class="label">Average Score</div></div>
+                <div class="stat-card"><div class="value" style="color: #234C6A;">{top_score:.0f}%</div><div class="label">Top Score</div></div>
             </div>
-            
             <div class="skills-section">
                 <div class="skills-card">
-                    <h3>🔴 Required Skills <span class="count">{job.role_profile.required_skills.count() if job.role_profile else 0}</span></h3>
-                    <div>{req_skills or "<span style='color:#999;'>No required skills specified</span>"}</div>
+                    <h3>Required Skills <span class="count">{req_count}</span></h3>
+                    <div>{req_skills if req_skills else no_req}</div>
                 </div>
                 <div class="skills-card">
-                    <h3>🟢 Preferred Skills <span class="count">{job.role_profile.preferred_skills.count() if job.role_profile else 0}</span></h3>
-                    <div>{pref_skills or "<span style='color:#999;'>No preferred skills specified</span>"}</div>
+                    <h3>Preferred Skills <span class="count">{pref_count}</span></h3>
+                    <div>{pref_skills if pref_skills else no_pref}</div>
                 </div>
             </div>
-            
             <div class="table-card">
                 <div class="table-header">
-                    <h3>👥 Matched Candidates</h3>
-                    <span>{total_candidates} candidate{"s" if total_candidates != 1 else ""}</span>
+                    <h3>Matched Candidates</h3>
+                    <span>{total_candidates} {cand_word}</span>
                 </div>
                 <table>
-                    <thead>
-                        <tr>
-                            <th>Rank</th>
-                            <th>Candidate</th>
-                            <th>Current Position</th>
-                            <th>Experience</th>
-                            <th>Job Fit Score</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {rows if rows else '<tr><td colspan="6" style="padding: 50px; text-align: center; color: #888;"><h3>No candidates matched yet</h3><p style="margin-top:10px;">Click "Re-Match All Candidates" to run the matching algorithm</p></td></tr>'}
-                    </tbody>
+                    <thead><tr><th>Rank</th><th>Candidate</th><th>Current Position</th><th>Experience</th><th>Job Fit Score</th><th>Action</th></tr></thead>
+                    <tbody>{rows if rows else empty_table}</tbody>
                 </table>
             </div>
         </div>

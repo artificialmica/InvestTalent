@@ -4,7 +4,47 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Upload Resume - InvestTalent-AI</title>
+    
+    <!-- Google Fonts: Playfair Display + Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
     <style>
+        /* ============================================
+           INVESTTALENT-AI DESIGN SYSTEM
+           Color Palette: Navy + Gold
+           ============================================ */
+        :root {
+            --primary-dark: #1B3C53;
+            --primary: #234C6A;
+            --primary-light: #456882;
+            --gray-light: #E3E3E3;
+            --white: #FFFFFF;
+            --off-white: #F8F9FA;
+            --gray-medium: #9AACB8;
+            --text-primary: #1B3C53;
+            --text-secondary: #456882;
+            --text-muted: #6B7C88;
+            --accent-gold: #C9A227;
+            --accent-gold-light: #D4B84A;
+            --success: #2D8659;
+            --success-light: #E8F5EE;
+            --warning: #D4A012;
+            --warning-light: #FDF6E3;
+            --danger: #C23B3B;
+            --danger-light: #FCEAEA;
+            --info: #2D7D9A;
+            --info-light: #E8F4F8;
+            --font-heading: 'Playfair Display', Georgia, serif;
+            --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            --shadow-sm: 0 1px 2px rgba(27, 60, 83, 0.05);
+            --shadow-md: 0 4px 12px rgba(27, 60, 83, 0.08);
+            --shadow-lg: 0 8px 24px rgba(27, 60, 83, 0.12);
+            --radius-md: 8px;
+            --radius-lg: 12px;
+        }
+        
         * {
             margin: 0;
             padding: 0;
@@ -12,33 +52,36 @@
         }
         
         body {
-            font-family: Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: var(--font-body);
+            background: var(--primary-dark);
             min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            padding: 20px;
+            padding: 40px 20px;
         }
         
         .container {
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-            max-width: 550px;
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg);
+            max-width: 580px;
             width: 100%;
             padding: 40px;
         }
         
         h1 {
-            color: #333;
-            margin-bottom: 10px;
+            font-family: var(--font-heading);
+            color: var(--text-primary);
+            margin-bottom: 8px;
             font-size: 28px;
+            font-weight: 600;
+            letter-spacing: -0.02em;
         }
         
         .subtitle {
-            color: #666;
-            margin-bottom: 30px;
+            color: var(--text-muted);
+            margin-bottom: 28px;
             font-size: 14px;
         }
         
@@ -49,38 +92,49 @@
         label {
             display: block;
             margin-bottom: 8px;
-            color: #333;
+            color: var(--text-primary);
             font-weight: 600;
-            font-size: 14px;
+            font-size: 13px;
         }
         
         select {
             width: 100%;
-            padding: 12px;
-            border: 2px solid #e0e0e0;
-            border-radius: 5px;
+            padding: 12px 14px;
+            border: 1px solid var(--gray-light);
+            border-radius: var(--radius-md);
             font-size: 14px;
-            transition: border-color 0.3s;
+            font-family: var(--font-body);
+            color: var(--text-primary);
+            background: var(--white);
+            transition: all 0.2s;
+            cursor: pointer;
         }
         
         select:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: var(--primary-light);
+            box-shadow: 0 0 0 3px rgba(35, 76, 106, 0.1);
         }
         
+        /* File Upload Dropzone */
         .file-upload {
-            border: 2px dashed #667eea;
-            border-radius: 8px;
+            border: 2px dashed var(--primary-light);
+            border-radius: var(--radius-lg);
             padding: 40px 30px;
             text-align: center;
-            background: #f8f9ff;
+            background: rgba(35, 76, 106, 0.02);
             cursor: pointer;
-            transition: all 0.3s;
+            transition: all 0.2s;
         }
         
         .file-upload:hover {
-            background: #f0f2ff;
-            border-color: #764ba2;
+            background: rgba(35, 76, 106, 0.04);
+            border-color: var(--primary-dark);
+        }
+        
+        .file-upload.drag-over {
+            background: rgba(201, 162, 39, 0.05);
+            border-color: var(--accent-gold);
         }
         
         .file-upload input[type="file"] {
@@ -89,134 +143,148 @@
         
         .file-upload-icon {
             font-size: 48px;
-            margin-bottom: 15px;
+            margin-bottom: 16px;
+            opacity: 0.8;
         }
         
         .file-upload-label {
-            color: #667eea;
+            color: var(--primary);
             font-weight: 600;
-            font-size: 16px;
+            font-size: 15px;
             cursor: pointer;
         }
         
         .file-info {
-            color: #666;
+            color: var(--text-muted);
             font-size: 12px;
             margin-top: 10px;
         }
         
         .selected-file {
-            margin-top: 15px;
-            color: #28a745;
+            margin-top: 16px;
+            color: var(--success);
             font-weight: 600;
             font-size: 14px;
         }
         
+        /* Info Notice */
         .auto-extract-notice {
-            background: #e8f4fd;
-            border: 1px solid #b8daff;
-            border-radius: 5px;
-            padding: 12px;
-            margin-bottom: 25px;
+            background: var(--info-light);
+            border: 1px solid rgba(45, 125, 154, 0.2);
+            border-radius: var(--radius-md);
+            padding: 14px 16px;
+            margin-bottom: 24px;
             font-size: 13px;
-            color: #004085;
+            color: var(--info);
         }
         
         .auto-extract-notice strong {
             display: block;
-            margin-bottom: 5px;
+            margin-bottom: 4px;
+            font-weight: 600;
         }
         
+        /* Submit Button */
         .btn {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            background: var(--primary-dark);
+            color: var(--white);
             padding: 14px 30px;
             border: none;
-            border-radius: 5px;
-            font-size: 16px;
+            border-radius: var(--radius-md);
+            font-size: 15px;
             font-weight: 600;
+            font-family: var(--font-body);
             cursor: pointer;
             width: 100%;
-            margin-top: 20px;
-            transition: transform 0.2s;
+            margin-top: 24px;
+            transition: all 0.2s;
         }
         
         .btn:hover {
+            background: var(--primary);
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+            box-shadow: var(--shadow-md);
         }
         
+        /* Messages / Alerts */
         .messages {
             margin-bottom: 20px;
         }
         
         .alert {
-            padding: 12px;
-            border-radius: 5px;
-            margin-bottom: 10px;
+            padding: 14px 16px;
+            border-radius: var(--radius-md);
+            margin-bottom: 12px;
+            font-size: 14px;
+            border-left: 4px solid;
         }
         
         .alert-success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
+            background: var(--success-light);
+            color: var(--success);
+            border-left-color: var(--success);
         }
         
         .alert-error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
+            background: var(--danger-light);
+            color: var(--danger);
+            border-left-color: var(--danger);
         }
         
         .alert-warning {
-            background: #fff3cd;
-            color: #856404;
-            border: 1px solid #ffeeba;
+            background: var(--warning-light);
+            color: #8B6914;
+            border-left-color: var(--warning);
         }
         
-        /* Collapsible sections */
+        /* Sections */
         .section {
-            background: #f8f9fa;
-            border-radius: 8px;
+            background: var(--off-white);
+            border-radius: var(--radius-md);
             padding: 20px;
             margin-bottom: 20px;
-            border: 1px solid #e0e0e0;
+            border: 1px solid rgba(27, 60, 83, 0.06);
         }
         
         .section h3 {
-            color: #667eea;
+            font-family: var(--font-heading);
+            color: var(--text-primary);
             font-size: 15px;
-            margin-bottom: 15px;
+            font-weight: 600;
+            margin-bottom: 12px;
         }
         
-        .section p {
-            color: #666;
+        .section > p {
+            color: var(--text-muted);
             font-size: 13px;
-            margin-bottom: 15px;
+            margin-bottom: 16px;
         }
         
         /* Job Posting Cards */
         .job-posting-card {
-            background: white;
-            border: 2px solid #e0e0e0;
-            border-radius: 5px;
-            padding: 12px 15px;
-            margin-bottom: 8px;
+            background: var(--white);
+            border: 2px solid var(--gray-light);
+            border-radius: var(--radius-md);
+            padding: 14px 16px;
+            margin-bottom: 10px;
             cursor: pointer;
             transition: all 0.2s;
         }
         
         .job-posting-card:hover {
-            border-color: #667eea;
+            border-color: var(--primary-light);
         }
         
         .job-posting-card.selected {
-            border-color: #667eea;
-            background: #f8f9ff;
+            border-color: var(--primary);
+            background: rgba(35, 76, 106, 0.02);
         }
         
         .job-posting-card input[type="radio"] {
-            margin-right: 10px;
+            margin-right: 12px;
+            accent-color: var(--primary-dark);
+            width: 16px;
+            height: 16px;
         }
         
         .job-posting-card label {
@@ -233,32 +301,36 @@
         
         .job-posting-title {
             font-weight: 600;
-            color: #333;
+            color: var(--text-primary);
             font-size: 14px;
         }
         
         .job-posting-meta {
-            font-size: 11px;
-            color: #666;
+            font-size: 12px;
+            color: var(--text-muted);
             margin-top: 3px;
         }
         
         .no-job-option {
-            background: #f0f0f0;
+            background: var(--gray-light);
+        }
+        
+        .no-job-option.selected {
+            background: rgba(35, 76, 106, 0.04);
         }
         
         /* F11: Diversity Section */
         .diversity-section {
-            border-left: 4px solid #17a2b8;
+            border-left: 4px solid var(--info);
         }
         
         .diversity-section h3 {
-            color: #17a2b8;
+            color: var(--info);
         }
         
         .form-row {
             display: flex;
-            gap: 15px;
+            gap: 16px;
         }
         
         .form-row .form-group {
@@ -268,9 +340,49 @@
         
         .privacy-notice {
             font-size: 11px;
-            color: #999;
-            margin-top: 12px;
+            color: var(--text-muted);
+            margin-top: 16px;
             font-style: italic;
+            padding-top: 12px;
+            border-top: 1px solid var(--gray-light);
+        }
+        
+        /* Back Link */
+        .back-link {
+            text-align: center;
+            margin-top: 24px;
+        }
+        
+        .back-link a {
+            color: var(--primary);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+        
+        .back-link a:hover {
+            color: var(--primary-dark);
+        }
+        
+        /* Responsive */
+        @media (max-width: 640px) {
+            .form-row {
+                flex-direction: column;
+                gap: 16px;
+            }
+            
+            .form-row .form-group {
+                margin-bottom: 0;
+            }
+            
+            .container {
+                padding: 28px 24px;
+            }
+            
+            body {
+                padding: 20px 16px;
+            }
         }
     </style>
 </head>
@@ -301,7 +413,7 @@
             <!-- PRIMARY: Resume Upload -->
             <div class="form-group">
                 <label>Resume File (PDF or DOCX) *</label>
-                <div class="file-upload" onclick="document.getElementById('resume_file').click()">
+                <div class="file-upload" id="dropzone" onclick="document.getElementById('resume_file').click()">
                     <input type="file" id="resume_file" name="resume_file" accept=".pdf,.docx" required onchange="displayFileName()">
                     <div class="file-upload-icon">📄</div>
                     <div class="file-upload-label">Click to select resume</div>
@@ -390,8 +502,8 @@
             <button type="submit" class="btn">Upload & Analyze</button>
         </form>
         
-        <div style="text-align: center; margin-top: 20px;">
-            <a href="{% url 'dashboard' %}" style="color: #667eea; text-decoration: none; font-size: 14px;">← Back to Dashboard</a>
+        <div class="back-link">
+            <a href="{% url 'dashboard' %}">← Back to Dashboard</a>
         </div>
     </div>
     
@@ -399,11 +511,13 @@
         function displayFileName() {
             const input = document.getElementById('resume_file');
             const display = document.getElementById('fileName');
+            const dropzone = document.getElementById('dropzone');
             
             if (input.files.length > 0) {
                 const name = input.files[0].name;
                 const size = (input.files[0].size / 1024 / 1024).toFixed(2);
                 display.textContent = `✓ ${name} (${size} MB)`;
+                dropzone.style.borderColor = 'var(--success)';
             }
         }
         
@@ -412,6 +526,29 @@
             card.classList.add('selected');
             card.querySelector('input').checked = true;
         }
+        
+        // Drag and drop support
+        const dropzone = document.getElementById('dropzone');
+        
+        dropzone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropzone.classList.add('drag-over');
+        });
+        
+        dropzone.addEventListener('dragleave', () => {
+            dropzone.classList.remove('drag-over');
+        });
+        
+        dropzone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropzone.classList.remove('drag-over');
+            
+            const input = document.getElementById('resume_file');
+            if (e.dataTransfer.files.length > 0) {
+                input.files = e.dataTransfer.files;
+                displayFileName();
+            }
+        });
     </script>
 </body>
 </html>

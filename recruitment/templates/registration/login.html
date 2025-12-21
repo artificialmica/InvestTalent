@@ -4,7 +4,47 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - InvestTalent-AI</title>
+    
+    <!-- Google Fonts: Playfair Display + Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
     <style>
+        /* ============================================
+           INVESTTALENT-AI DESIGN SYSTEM
+           Color Palette: Navy + Gold
+           ============================================ */
+        :root {
+            --primary-dark: #1B3C53;
+            --primary: #234C6A;
+            --primary-light: #456882;
+            --gray-light: #E3E3E3;
+            --white: #FFFFFF;
+            --off-white: #F8F9FA;
+            --gray-medium: #9AACB8;
+            --text-primary: #1B3C53;
+            --text-secondary: #456882;
+            --text-muted: #6B7C88;
+            --accent-gold: #C9A227;
+            --accent-gold-light: #D4B84A;
+            --success: #2D8659;
+            --success-light: #E8F5EE;
+            --warning: #D4A012;
+            --warning-light: #FDF6E3;
+            --danger: #C23B3B;
+            --danger-light: #FCEAEA;
+            --info: #2D7D9A;
+            --info-light: #E8F4F8;
+            --font-heading: 'Playfair Display', Georgia, serif;
+            --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            --shadow-sm: 0 1px 2px rgba(27, 60, 83, 0.05);
+            --shadow-md: 0 4px 12px rgba(27, 60, 83, 0.08);
+            --shadow-lg: 0 12px 40px rgba(27, 60, 83, 0.15);
+            --radius-md: 8px;
+            --radius-lg: 12px;
+        }
+        
         * {
             margin: 0;
             padding: 0;
@@ -12,37 +52,41 @@
         }
         
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: var(--font-body);
+            background: var(--primary-dark);
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
+            padding: 20px;
         }
         
         .login-container {
-            background: white;
-            padding: 40px;
-            border-radius: 15px;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+            background: var(--white);
+            padding: 44px 40px;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg);
             width: 100%;
-            max-width: 400px;
+            max-width: 420px;
         }
         
         .logo {
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 32px;
         }
         
         .logo h1 {
+            font-family: var(--font-heading);
             font-size: 28px;
-            color: #333;
-            margin-bottom: 5px;
+            color: var(--text-primary);
+            margin-bottom: 6px;
+            font-weight: 600;
+            letter-spacing: -0.02em;
         }
         
         .logo p {
-            color: #666;
-            font-size: 14px;
+            color: var(--text-muted);
+            font-size: 13px;
         }
         
         .form-group {
@@ -52,104 +96,149 @@
         .form-group label {
             display: block;
             margin-bottom: 8px;
-            color: #333;
+            color: var(--text-primary);
             font-weight: 600;
-            font-size: 14px;
+            font-size: 13px;
         }
         
         .form-group input {
             width: 100%;
-            padding: 12px 15px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 16px;
-            transition: border-color 0.3s;
+            padding: 12px 14px;
+            border: 1px solid var(--gray-light);
+            border-radius: var(--radius-md);
+            font-size: 15px;
+            font-family: var(--font-body);
+            color: var(--text-primary);
+            transition: all 0.2s;
         }
         
         .form-group input:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: var(--primary-light);
+            box-shadow: 0 0 0 3px rgba(35, 76, 106, 0.1);
+        }
+        
+        .form-group input::placeholder {
+            color: var(--gray-medium);
         }
         
         .login-btn {
             width: 100%;
             padding: 14px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            background: var(--primary-dark);
+            color: var(--white);
             border: none;
-            border-radius: 8px;
-            font-size: 16px;
+            border-radius: var(--radius-md);
+            font-size: 15px;
             font-weight: 600;
+            font-family: var(--font-body);
             cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
+            transition: all 0.2s;
         }
         
         .login-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+            background: var(--primary);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
         }
         
         .error-message {
-            background: #f8d7da;
-            border: 1px solid #f5c6cb;
-            color: #721c24;
-            padding: 12px;
-            border-radius: 8px;
+            background: var(--danger-light);
+            border-left: 4px solid var(--danger);
+            color: var(--danger);
+            padding: 14px 16px;
+            border-radius: var(--radius-md);
             margin-bottom: 20px;
             font-size: 14px;
         }
         
         .demo-credentials {
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 1px solid #e0e0e0;
+            margin-top: 32px;
+            padding-top: 24px;
+            border-top: 1px solid var(--gray-light);
         }
         
         .demo-credentials h3 {
-            color: #333;
-            font-size: 14px;
-            margin-bottom: 15px;
+            color: var(--text-muted);
+            font-size: 12px;
+            margin-bottom: 14px;
             text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            font-weight: 600;
         }
         
         .credential-card {
-            background: #f8f9fa;
-            padding: 12px;
-            border-radius: 8px;
+            background: var(--off-white);
+            padding: 12px 14px;
+            border-radius: var(--radius-md);
             margin-bottom: 10px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            transition: all 0.2s;
+        }
+        
+        .credential-card:hover {
+            background: rgba(35, 76, 106, 0.05);
+        }
+        
+        .credential-card:last-child {
+            margin-bottom: 0;
         }
         
         .credential-card .role {
             font-weight: 600;
-            color: #333;
+            font-size: 13px;
+            color: var(--text-primary);
         }
         
         .credential-card .role.hr-admin {
-            color: #dc3545;
+            color: var(--danger);
         }
         
         .credential-card .role.manager {
-            color: #ffc107;
+            color: var(--accent-gold);
         }
         
         .credential-card .role.executive {
-            color: #17a2b8;
+            color: var(--info);
         }
         
         .credential-card .creds {
-            font-size: 12px;
-            color: #666;
+            font-size: 11px;
+            color: var(--text-muted);
             text-align: right;
         }
         
         .credential-card .creds code {
-            background: #e9ecef;
+            background: var(--gray-light);
             padding: 2px 6px;
             border-radius: 4px;
-            font-family: monospace;
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+        
+        /* Responsive */
+        @media (max-width: 480px) {
+            .login-container {
+                padding: 32px 24px;
+            }
+            
+            .logo h1 {
+                font-size: 24px;
+            }
+            
+            .credential-card {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 6px;
+            }
+            
+            .credential-card .creds {
+                text-align: left;
+            }
         }
     </style>
 </head>

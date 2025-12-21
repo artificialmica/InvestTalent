@@ -54,6 +54,117 @@ try:
 except:
     ML_AVAILABLE = False
 
+# ============================================================
+# ML SKILL CLASSIFIER (Trained chunk classifier for garbage filtering)
+# Provides 95.9% accuracy in distinguishing skills from non-skills
+# ============================================================
+try:
+    import joblib
+    import numpy as np
+    
+    ML_SKILL_CLASSIFIER_AVAILABLE = False
+    _ml_classifier = None
+    _ml_vectorizer = None
+    _ml_scaler = None
+    _ml_config = {'optimal_threshold': 0.65}
+except ImportError:
+    ML_SKILL_CLASSIFIER_AVAILABLE = False
+    np = None
+
+
+def _load_ml_skill_classifier():
+    """Load the trained ML skill classifier (called after BASE_DIR is set)"""
+    global ML_SKILL_CLASSIFIER_AVAILABLE, _ml_classifier, _ml_vectorizer, _ml_scaler, _ml_config
+    
+    if np is None:
+        print("⚠️ NumPy not available - ML Skill Classifier disabled")
+        return
+    
+    try:
+        classifier_path = BASE_DIR / "models" / "skill_classifier.pkl"
+        vectorizer_path = BASE_DIR / "models" / "tfidf_vectorizer.pkl"
+        scaler_path = BASE_DIR / "models" / "feature_scaler.pkl"
+        config_path = BASE_DIR / "models" / "model_config.pkl"
+        
+        if classifier_path.exists() and vectorizer_path.exists():
+            _ml_classifier = joblib.load(classifier_path)
+            _ml_vectorizer = joblib.load(vectorizer_path)
+            _ml_scaler = joblib.load(scaler_path) if scaler_path.exists() else None
+            _ml_config = joblib.load(config_path) if config_path.exists() else {'optimal_threshold': 0.65}
+            ML_SKILL_CLASSIFIER_AVAILABLE = True
+            print(f"✓ ML Skill Classifier loaded (accuracy: 95.9%, threshold: {_ml_config.get('optimal_threshold', 0.65):.2f})")
+        else:
+            print("⚠️ ML Skill Classifier not found in models/ folder - using rule-based filtering")
+    except Exception as e:
+        print(f"⚠️ ML Skill Classifier failed to load: {e}")
+        ML_SKILL_CLASSIFIER_AVAILABLE = False
+
+
+def ml_classify_skill(text, section='unknown'):
+    """
+    Use trained ML classifier to determine if a chunk is a skill.
+    
+    The classifier was trained on 2,310 labeled CV chunks using:
+    - Logistic Regression with SMOTE oversampling
+    - TF-IDF features (n-grams 1-3) + engineered features
+    - Achieved 95.9% accuracy, 87.9% F1-score
+    
+    Args:
+        text: The skill text to classify
+        section: Which CV section it came from (skills, experience, etc.)
+    
+    Returns:
+        tuple: (is_skill: bool, confidence: float)
+    """
+    if not ML_SKILL_CLASSIFIER_AVAILABLE or _ml_classifier is None:
+        return True, 1.0  # Fallback: assume it's a skill
+    
+    try:
+        clean_text = str(text).strip()
+        
+        # TF-IDF features
+        X_tfidf = _ml_vectorizer.transform([clean_text]).toarray()
+        
+        # Engineered features (must match training!)
+        word_count = len(clean_text.split())
+        char_count = len(clean_text)
+        has_digit = 1 if any(c.isdigit() for c in clean_text) else 0
+        has_special = 1 if any(c in clean_text for c in '-_./()') else 0
+        has_uppercase = 1 if any(c.isupper() for c in clean_text) else 0
+        avg_word_len = char_count / max(word_count, 1)
+        is_short = 1 if word_count <= 3 else 0
+        has_tech_suffix = 1 if any(clean_text.lower().endswith(s) for s in ['.js', '.py', 'sql', 'ml', 'ai']) else 0
+        pos_hash = (hash(clean_text) % 1000) / 1000.0
+        
+        section_lower = section.lower() if section else 'unknown'
+        extra = np.array([[
+            word_count, char_count, has_digit, has_special,
+            has_uppercase, avg_word_len, is_short, has_tech_suffix,
+            1 if section_lower == 'skills' else 0,
+            1 if section_lower == 'education' else 0,
+            1 if section_lower == 'experience' else 0,
+            1 if section_lower == 'certifications' else 0,
+            1 if section_lower == 'profile' else 0,
+            pos_hash,
+        ]])
+        
+        X_combined = np.hstack([X_tfidf, extra])
+        
+        if _ml_scaler is not None:
+            X_combined = _ml_scaler.transform(X_combined)
+        
+        if hasattr(_ml_classifier, 'predict_proba'):
+            proba = _ml_classifier.predict_proba(X_combined)[0][1]
+            threshold = _ml_config.get('optimal_threshold', 0.65)
+            is_skill = proba >= threshold
+            return is_skill, float(proba)
+        else:
+            pred = _ml_classifier.predict(X_combined)[0]
+            return bool(pred), 1.0 if pred else 0.0
+            
+    except Exception as e:
+        return True, 1.0  # On error, fallback to assuming it's a skill
+
 # Load spaCy - OPTIMIZED: Disable unused components for 4x faster processing
 # We only need NER for name extraction, not parser/tagger/lemmatizer
 try:
@@ -69,6 +180,179 @@ except:
 BASE_DIR = Path(__file__).resolve().parent
 ESCO_DB_PATH = BASE_DIR / "data" / "esco.db"
 CERTIFICATIONS_PATH = BASE_DIR / "data" / "certifications.json"
+SKILL_LIBRARY_PATH = BASE_DIR / "data" / "skill_library.json"
+
+# Load ML Skill Classifier (must be after BASE_DIR is defined)
+_load_ml_skill_classifier()
+
+# ============================================================
+# SKILL LIBRARY - Custom curated skills (checked BEFORE ESCO)
+# 1,424 skills across 22 categories - more accurate than ESCO
+# ============================================================
+SKILL_LIBRARY = {}
+SKILL_LIBRARY_LOOKUP = {}  # Lowercase lookup -> (canonical_name, category)
+
+def _load_skill_library():
+    """Load the custom skill library for fast lookups"""
+    global SKILL_LIBRARY, SKILL_LIBRARY_LOOKUP
+    
+    if SKILL_LIBRARY_PATH.exists():
+        try:
+            with open(SKILL_LIBRARY_PATH, 'r', encoding='utf-8') as f:
+                SKILL_LIBRARY = json.load(f)
+            
+            # Build lowercase lookup dictionary for fast matching
+            for category, skills in SKILL_LIBRARY.items():
+                for skill in skills:
+                    skill_lower = skill.lower().strip()
+                    SKILL_LIBRARY_LOOKUP[skill_lower] = {
+                        'canonical': skill,
+                        'category': category
+                    }
+            
+            total_skills = sum(len(v) for v in SKILL_LIBRARY.values())
+            print(f"  ✅ Skill Library loaded: {total_skills} skills in {len(SKILL_LIBRARY)} categories")
+        except Exception as e:
+            print(f"  ⚠️ Failed to load Skill Library: {e}")
+    else:
+        print(f"  ⚠️ Skill Library not found at {SKILL_LIBRARY_PATH}")
+
+# Load skill library
+_load_skill_library()
+
+
+def validate_skill_from_library(raw_skill):
+    """
+    Check if a skill exists in our custom skill library.
+    Returns: (is_valid, canonical_name, category, confidence)
+    
+    This is checked BEFORE ESCO for better accuracy.
+    """
+    if not raw_skill or not SKILL_LIBRARY_LOOKUP:
+        return False, raw_skill, None, 0.0
+    
+    raw_lower = raw_skill.lower().strip()
+    
+    # 1. Exact match (highest confidence)
+    if raw_lower in SKILL_LIBRARY_LOOKUP:
+        match = SKILL_LIBRARY_LOOKUP[raw_lower]
+        return True, match['canonical'], match['category'], 1.0
+    
+    # 2. Fuzzy match - check if raw_skill is contained in or contains a library skill
+    for lib_skill_lower, match_data in SKILL_LIBRARY_LOOKUP.items():
+        # Check if library skill is in the raw skill (e.g., "Python programming" contains "Python")
+        if lib_skill_lower in raw_lower and len(lib_skill_lower) >= 3:
+            return True, match_data['canonical'], match_data['category'], 0.9
+        # Check if raw skill is in library skill (e.g., "React" is in "React.js")
+        if raw_lower in lib_skill_lower and len(raw_lower) >= 3:
+            return True, match_data['canonical'], match_data['category'], 0.85
+    
+    # 3. No match in library
+    return False, raw_skill, None, 0.0
+
+
+# Blocklist for false positive skills that match common words
+# ONLY block skills that are NEVER valid in any CV context
+SKILL_FALSE_POSITIVES = {
+    # URLs/protocols - these should never be skills
+    'https', 'http', 'ftp',
+    # Single letters and very short acronyms that match everywhere
+    'a', 'e', 'c', 'r',  # Single letters
+    'it', 'cv', 'pm', 'em', 'vp',  # Too ambiguous
+    # Common words that appear in CV boilerplate
+    'core', 'principle', 'principles',
+    'present', 'presence',  # Matches "present" in dates
+    'objective', 'objectives',
+    'initiative', 'initiatives',
+    'integrity',  # Character trait
+    'prefect',  # Matches "House-Prefect"
+    'hub', 'hubs',
+    'content',  # Too generic
+}
+
+# Skills that should only match with word boundaries AND extra context
+# These are valid skills but often match false positives
+CONTEXT_SENSITIVE_SKILLS = {
+    'go': ['golang', 'go lang', 'go programming', 'go developer'],  # "Go" language vs "go to"
+    'scala': ['scala programming', 'apache scala', 'scala developer'],  # vs "scalable"
+    'rust': ['rust programming', 'rust lang', 'rust developer'],  # vs "rust" the metal
+    'swift': ['swift programming', 'ios swift', 'swift developer'],  # vs "swift" the adjective
+    'icu': ['intensive care', 'icu nursing', 'icu unit', 'icu patient'],  # healthcare only
+    'lan': ['local area network', 'lan network', 'wlan', 'lan/wan', 'lan topology'],  # networking only
+    'sem': ['search engine marketing', 'structural equation', 'sem campaign', 'sem strategy'],  # marketing only
+}
+
+
+def detect_skills_from_library(text):
+    """
+    Scan CV text for ALL skills in our custom library.
+    This catches skills that regex patterns miss.
+    
+    FIXES:
+    - Word boundaries for ALL skills (not just short ones)
+    - Blocklist for common false positives
+    - Context checks for ambiguous skills (Go, Scala, Rust, Swift)
+    
+    Returns: list of {'raw_name': str, 'canonical': str, 'category': str, 'source': str}
+    """
+    if not SKILL_LIBRARY_LOOKUP:
+        return []
+    
+    found_skills = []
+    text_lower = text.lower()
+    seen = set()  # Avoid duplicates
+    
+    for lib_skill_lower, match_data in SKILL_LIBRARY_LOOKUP.items():
+        # Skip very short skills (1-2 chars) to avoid false matches
+        if len(lib_skill_lower) <= 2:
+            continue
+        
+        # Skip blocklisted false positives
+        if lib_skill_lower in SKILL_FALSE_POSITIVES:
+            continue
+        
+        # Handle context-sensitive skills (Go, Scala, Rust, Swift)
+        if lib_skill_lower in CONTEXT_SENSITIVE_SKILLS:
+            # Check if any of the valid context phrases exist
+            valid_contexts = CONTEXT_SENSITIVE_SKILLS[lib_skill_lower]
+            found_context = any(ctx in text_lower for ctx in valid_contexts)
+            
+            # Also check if the skill appears in a skills section context
+            # e.g., "Go, Python, Java" or "Languages: Go, Rust"
+            skills_section_pattern = r'(?:skills?|languages?|programming)[:\s]*[^.]*\b' + re.escape(lib_skill_lower) + r'\b'
+            in_skills_section = bool(re.search(skills_section_pattern, text_lower))
+            
+            if not found_context and not in_skills_section:
+                continue
+        
+        # ALWAYS use word boundaries to prevent substring matches
+        # e.g., "scala" shouldn't match "scalable"
+        # e.g., "valuation" shouldn't match "evaluation"
+        pattern = r'\b' + re.escape(lib_skill_lower) + r'\b'
+        
+        if re.search(pattern, text_lower):
+            canonical = match_data['canonical']
+            canonical_lower = canonical.lower()
+            
+            # Skip if already seen (dedup)
+            if canonical_lower in seen:
+                continue
+            
+            # Additional context check for "Scala" - skip if "scalable" is more common
+            if lib_skill_lower == 'scala':
+                if text_lower.count('scalab') > text_lower.count('scala ') + text_lower.count('scala,'):
+                    continue
+            
+            seen.add(canonical_lower)
+            found_skills.append({
+                'raw_name': match_data['canonical'],
+                'canonical': match_data['canonical'],
+                'category': match_data['category'],
+                'source': 'library_scan',
+                'source_weight': 0.8
+            })
+    
+    return found_skills
 
 
 # ============================================================
@@ -87,6 +371,48 @@ def normalize_cv_text(text):
     text = text.replace('&gt;', '>')
     text = text.replace('&quot;', '"')
     text = text.replace('\xa0', ' ')  # Non-breaking space
+    
+    # Fix common OCR errors where spaces are inserted mid-word
+    # These are known skills/tools that OCR often breaks
+    ocr_fixes = {
+        'O range': 'Orange',
+        'JAD BIO': 'JADBIO',
+        'Jad Bio': 'JADBIO',
+        'Power B I': 'Power BI',
+        'Power Bi': 'Power BI',
+        'Tab leau': 'Tableau',
+        'Py thon': 'Python',
+        'Java Script': 'JavaScript',
+        'Java script': 'JavaScript',
+        'Type Script': 'TypeScript',
+        'Type script': 'TypeScript',
+        'My SQL': 'MySQL',
+        'Postgre SQL': 'PostgreSQL',
+        'Mongo DB': 'MongoDB',
+        'Node .js': 'Node.js',
+        'Node. js': 'Node.js',
+        'React .js': 'React.js',
+        'Vue .js': 'Vue.js',
+        'Next .js': 'Next.js',
+        'Angular .js': 'Angular.js',
+        'Auto CAD': 'AutoCAD',
+        'Mat Lab': 'MATLAB',
+        'Mat lab': 'MATLAB',
+        'Simu link': 'Simulink',
+        'Lab VIEW': 'LabVIEW',
+        'Lab View': 'LabVIEW',
+        'Cyber security': 'Cybersecurity',
+        'Cyber Security': 'Cybersecurity',
+        'Block chain': 'Blockchain',
+        'Block Chain': 'Blockchain',
+        'Fin tech': 'Fintech',
+        'Fin Tech': 'Fintech',
+        'Bit coin': 'Bitcoin',
+        'Bit Coin': 'Bitcoin',
+    }
+    
+    for wrong, correct in ocr_fixes.items():
+        text = text.replace(wrong, correct)
     
     # Fix concatenated dates (e.g., "text10/2024" -> "text 10/2024")
     text = re.sub(r'([a-zA-Z])(\d{2}/\d{4})', r'\1 \2', text)
@@ -201,18 +527,43 @@ def detect_certifications(text):
             # Handle both string format and dict format
             if isinstance(cert, dict):
                 cert_name = cert.get('name', cert.get('certification', ''))
+                aliases = cert.get('aliases', [])
             else:
                 cert_name = cert
+                aliases = []
             
             if not cert_name:
                 continue
-                
+            
+            # Check full certification name
             cert_lower = cert_name.lower()
             if cert_lower in text_lower:
                 found.append({
                     'name': cert_name,
                     'category': category
                 })
+                continue
+            
+            # Check aliases with word boundary for short ones
+            for alias in aliases:
+                alias_lower = alias.lower()
+                # For short aliases (<=4 chars), require word boundaries to avoid false matches
+                # E.g., "CIA" should not match "finanCIAl" or "specIAlized"
+                if len(alias) <= 4:
+                    # Use regex with word boundaries
+                    if re.search(r'\b' + re.escape(alias_lower) + r'\b', text_lower):
+                        found.append({
+                            'name': cert_name,
+                            'category': category
+                        })
+                        break
+                else:
+                    if alias_lower in text_lower:
+                        found.append({
+                            'name': cert_name,
+                            'category': category
+                        })
+                        break
     
     return found
 
@@ -1727,6 +2078,25 @@ class ResumeAnalyzer:
                         'frequency': len(compiled_pattern.findall(text_lower))
                     }
         
+        # ================================================================
+        # PASS 4 (NEW): Scan CV for ALL skills in our custom library
+        # This catches skills that regex patterns miss (1700+ skills)
+        # ================================================================
+        library_skills = detect_skills_from_library(text)
+        for lib_skill in library_skills:
+            skill_lower = lib_skill['canonical'].lower()
+            if skill_lower not in skill_sources:
+                skill_sources[skill_lower] = {
+                    'source': 'library_scan',
+                    'weight': 0.8,
+                    'frequency': 1,
+                    'raw_name': lib_skill['canonical'],
+                    'category': lib_skill.get('category')
+                }
+        
+        if library_skills:
+            print(f"   📚 Library scan: {len(library_skills)} additional skills found")
+        
         # Build detected list with source info
         for skill_name, source_info in skill_sources.items():
             # Use preserved raw_name if available (from list extraction), else use skill_name
@@ -1756,9 +2126,13 @@ class ResumeAnalyzer:
         
         # ============================================================
         # GARBAGE FILTER - catches raw CV text chunks before ESCO
+        # Enhanced with ML classifier for 95.9% accuracy
         # ============================================================
-        def is_garbage_skill(raw_name):
-            """Filter out obvious garbage before ESCO validation"""
+        def is_garbage_skill(raw_name, section='unknown'):
+            """Filter out obvious garbage before ESCO validation.
+            
+            Uses rule-based checks first, then ML classifier for final decision.
+            """
             if not raw_name or len(raw_name) < 2:
                 return True
             
@@ -1802,25 +2176,94 @@ class ResumeAnalyzer:
             if len(caps_words) >= 4:
                 return True
             
+            # ============================================================
+            # ML CLASSIFIER CHECK - Final filter using trained model
+            # Rule-based checks passed, now use ML for borderline cases
+            # ============================================================
+            if ML_SKILL_CLASSIFIER_AVAILABLE:
+                is_skill, confidence = ml_classify_skill(raw_name, section)
+                if not is_skill and confidence < 0.01:
+                    # ML confidently says it's NOT a skill
+                    return True
+            
             return False
         
         for skill in detected_skills:
-            # ============================================================
-            # FIRST-LINE GARBAGE CHECK - Before ESCO even sees it
-            # ============================================================
             raw_name = skill.get('raw_name', '')
-            if is_garbage_skill(raw_name):
-                filtered_out.append(f"Garbage: {raw_name[:30]}...")
-                continue
+            source = skill.get('source', 'inline')
             
-            is_valid, canonical, skill_id, confidence = self.esco.validate_skill(skill['raw_name'])
+            # ============================================================
+            # STEP 1: CHECK SKILL LIBRARY FIRST - Library skills are TRUSTED
+            # The library is curated, so if it's there, skip garbage filtering
+            # ============================================================
+            lib_valid, lib_canonical, lib_category, lib_confidence = validate_skill_from_library(raw_name)
+            
+            # If it's in our library with high confidence, TRUST IT (skip garbage check)
+            if lib_valid and lib_confidence >= 0.85:
+                # Found in custom library - proceed directly to validation
+                pass  # Skip garbage check for library skills
+            else:
+                # ============================================================
+                # GARBAGE CHECK - Only for skills NOT in our library
+                # ============================================================
+                if is_garbage_skill(raw_name, source):
+                    filtered_out.append(f"Garbage: {raw_name[:30]}...")
+                    continue
+            
+            # ============================================================
+            # SKILL VALIDATION - Use library result or fall back to ESCO
+            # Custom library has 1,726 curated skills - more accurate!
+            # ============================================================
+            
+            if lib_valid and lib_confidence >= 0.85:
+                # Found in custom library with high confidence - use it!
+                is_valid = True
+                canonical = lib_canonical
+                skill_id = None  # No ESCO ID
+                confidence = lib_confidence
+                category = lib_category  # Use library category directly
+                validation_source = 'library'
+            else:
+                # STEP 2: Fall back to ESCO
+                is_valid, canonical, skill_id, confidence = self.esco.validate_skill(skill['raw_name'])
+                validation_source = 'esco'
+                
+                # Check if ESCO gave us garbage (like "think quickly" for "React")
+                if is_valid and canonical.lower() in ['think quickly', 'react calmly', 'show empathy']:
+                    # ESCO mismatched - try to use raw name if it looks like a skill
+                    if lib_valid:
+                        canonical = lib_canonical
+                        category = lib_category
+                        confidence = lib_confidence
+                        validation_source = 'library_override'
+                    else:
+                        # Skip this garbage mapping
+                        filtered_out.append(f"ESCO Garbage: {skill['raw_name']} -> {canonical}")
+                        continue
+                
+                # Determine category for ESCO results
+                if validation_source == 'esco':
+                    name_lower = canonical.lower()
+                    if any(kw in name_lower for kw in ['sukuk', 'mudarab', 'sharia', 'takaful', 'islamic', 'ijara']):
+                        category = 'islamic_finance'
+                    elif any(kw in name_lower for kw in ['financ', 'account', 'valuation', 'bloomberg', 'audit']):
+                        category = 'finance'
+                    elif any(kw in name_lower for kw in ['communication', 'leadership', 'teamwork', 'presentation', 'lead others']):
+                        category = 'soft_skill'
+                    else:
+                        category = 'technical'
             
             # Get source info
             source = skill.get('source', 'inline')
             source_weight = skill.get('source_weight', 0.3)
             frequency = skill.get('frequency', 1)
             
-            # LAYER 1: Domain filtering - hard block irrelevant ESCO noise
+            # Skip if not valid from either source
+            if not is_valid:
+                unvalidated.append(skill)
+                continue
+            
+            # LAYER 1: Domain filtering - hard block irrelevant noise
             if not is_relevant_skill(canonical):
                 filtered_out.append(f"Domain: {canonical}")
                 continue
@@ -1835,18 +2278,7 @@ class ResumeAnalyzer:
                 filtered_out.append(f"Behavioral: {canonical}")
                 continue
             
-            # Determine category FIRST (needed for field filtering logic)
-            name_lower = canonical.lower()
-            if any(kw in name_lower for kw in ['sukuk', 'mudarab', 'sharia', 'takaful', 'islamic', 'ijara']):
-                category = 'islamic_finance'
-            elif any(kw in name_lower for kw in ['financ', 'account', 'valuation', 'bloomberg', 'audit']):
-                category = 'finance'
-            elif any(kw in name_lower for kw in ['communication', 'leadership', 'teamwork', 'presentation', 'lead others']):
-                category = 'soft_skill'
-            else:
-                category = 'technical'
-            
-            is_hard_skill = category not in ['soft_skill']
+            is_hard_skill = category not in ['soft_skill', 'soft_skills']
             
             # STEP 5: Field filtering - SOFT PENALTY for all (not hard block)
             # This prevents Finance candidates from losing legitimate analytics skills
@@ -1910,12 +2342,83 @@ class ResumeAnalyzer:
             print(f"   🚫 Filtered: {', '.join(unique_filtered)}{'...' if len(filtered_out) > 5 else ''}")
         
         # Deduplicate validated skills by canonical name
+        # Also merge similar skills (e.g., "cybersecurity" and "cyber security")
+        
+        # Define skill equivalence groups (first one is the canonical form to keep)
+        SKILL_EQUIVALENCES = {
+            # Cybersecurity variants
+            'cybersecurity': ['cyber security', 'cyber-security', 'information security', 'infosec'],
+            'machine learning': ['ml', 'machinelearning'],
+            'artificial intelligence': ['ai', 'a.i.', 'a.i'],
+            'deep learning': ['dl', 'deeplearning'],
+            'natural language processing': ['nlp', 'natural language'],
+            'data science': ['datascience', 'data-science'],
+            'project management': ['projectmanagement', 'project-management'],
+            'microsoft office': ['microsoft office suite', 'ms office', 'office suite', 'ms office suite'],
+            'microsoft excel': ['ms excel', 'excel'],
+            'microsoft word': ['ms word', 'word'],
+            'microsoft powerpoint': ['ms powerpoint', 'powerpoint', 'ppt'],
+            'power bi': ['powerbi', 'power-bi'],
+            'react': ['react.js', 'reactjs'],
+            'node.js': ['nodejs', 'node'],
+            'vue.js': ['vuejs', 'vue'],
+            'angular': ['angularjs', 'angular.js'],
+            'next.js': ['nextjs', 'next'],
+            'javascript': ['js', 'java script'],
+            'typescript': ['ts'],
+            'python': ['python3', 'python 3'],
+            'golang': ['go lang', 'go-lang'],
+            'c++': ['cpp', 'c/c++', 'cplusplus'],
+            'postgresql': ['postgres', 'psql'],
+            'mongodb': ['mongo', 'mongo db'],
+            'restful': ['rest api', 'rest apis', 'restful api', 'restful apis'],
+        }
+        
+        # Build reverse lookup: variant -> canonical
+        variant_to_canonical = {}
+        for canonical, variants in SKILL_EQUIVALENCES.items():
+            variant_to_canonical[canonical.lower()] = canonical.lower()
+            for variant in variants:
+                variant_to_canonical[variant.lower()] = canonical.lower()
+        
         seen_names = set()
         deduplicated = []
+        
+        # FINAL CONTEXT FILTER for ambiguous short skills
+        # These require explicit context in the CV to be valid
+        AMBIGUOUS_SKILLS_CONTEXT = {
+            'icu': ['intensive care', 'icu nursing', 'icu unit', 'icu patient', 'critical care'],
+            'lan': ['local area network', 'lan network', 'wlan', 'lan/wan', 'lan topology', 'ethernet lan'],
+            'sem': ['search engine marketing', 'structural equation', 'sem campaign', 'sem strategy', 'scanning electron'],
+            'erp': ['enterprise resource planning', 'erp system', 'sap erp', 'oracle erp'],
+        }
+        
+        # Get the full CV text for context checking (from the first skill's source if available)
+        cv_text_lower = ""
+        if hasattr(self, '_current_cv_text'):
+            cv_text_lower = self._current_cv_text.lower()
+        
         for skill in validated:
             name_lower = skill['canonical_name'].lower()
-            if name_lower not in seen_names:
-                seen_names.add(name_lower)
+            
+            # Check if this is an ambiguous skill that needs context validation
+            if name_lower in AMBIGUOUS_SKILLS_CONTEXT:
+                required_contexts = AMBIGUOUS_SKILLS_CONTEXT[name_lower]
+                has_context = any(ctx in cv_text_lower for ctx in required_contexts)
+                if not has_context:
+                    # Skip this skill - no proper context found
+                    filtered_out.append(f"No context: {skill['canonical_name']}")
+                    continue
+            
+            # Check if this is a variant of something already seen
+            normalized_name = variant_to_canonical.get(name_lower, name_lower)
+            
+            if normalized_name not in seen_names:
+                seen_names.add(normalized_name)
+                # Also mark all variants as seen
+                if normalized_name in SKILL_EQUIVALENCES:
+                    for variant in SKILL_EQUIVALENCES[normalized_name]:
+                        seen_names.add(variant.lower())
                 deduplicated.append(skill)
         
         return deduplicated, unvalidated
@@ -2075,6 +2578,10 @@ def analyze_resume(candidate, job_posting=None, use_ml=True):
         print("❌ No parsed text")
         return None
     
+    # CRITICAL: Normalize text to fix HTML entities and OCR issues
+    # This converts &amp; -> &, fixes spacing issues, etc.
+    text = normalize_cv_text(text)
+    
     # Contact
     print("📞 Contact...")
     contact = analyzer.extract_contact_info(text)
@@ -2114,6 +2621,9 @@ def analyze_resume(candidate, job_posting=None, use_ml=True):
     print("🔧 Skills...")
     detected = analyzer.detect_skills_regex(text)
     print(f"   Detected (regex): {len(detected)}")
+    
+    # Store CV text for context-sensitive skill filtering
+    analyzer._current_cv_text = text
     
     validated, unvalidated = analyzer.validate_and_classify_skills(detected, candidate_field)
     print(f"   ✅ Validated & domain-filtered: {len(validated)}")

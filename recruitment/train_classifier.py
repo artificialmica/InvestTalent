@@ -93,16 +93,16 @@ class ImprovedSkillClassifierTrainer:
         texts = df["text"].fillna("").astype(str).values
 
         if fit:
-            # Enhanced TF-IDF with better parameters
+            
             self.vectorizer = TfidfVectorizer(
-                max_features=2000,        # More features
-                ngram_range=(1, 3),       # Capture phrases
-                min_df=1,                 # Include rare terms (skills are often rare)
+                max_features=2000,        
+                ngram_range=(1, 3),       
+                min_df=1,                 
                 max_df=0.95,
                 strip_accents="unicode",
                 lowercase=True,
-                token_pattern=r"\b\w[\w\-\.]*\w\b|\b\w\b",  # Better token pattern
-                sublinear_tf=True         # Apply log scaling
+                token_pattern=r"\b\w[\w\-\.]*\w\b|\b\w\b",  
+                sublinear_tf=True         
             )
             X_tfidf = self.vectorizer.fit_transform(texts)
             self.feature_names = list(self.vectorizer.get_feature_names_out())

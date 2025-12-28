@@ -2,29 +2,29 @@
 ============================================================
 NF2 LOAD TEST REPORT
 ============================================================
-Timestamp: 2025-12-16 23:56:24
+Timestamp: 2025-12-27 01:49:50
 Requirement: Handle minimum 20 concurrent users
 Tested with: 25 concurrent users
 
 ------------------------------------------------------------
 RESULTS
 ------------------------------------------------------------
-Total Requests:     576
+Total Requests:     529
 Failed Requests:    0
 Failure Rate:       0.00%
-Avg Response Time:  49ms
-95th Percentile:    38432ms
-Requests/Second:    9.7
+Avg Response Time:  65ms
+95th Percentile:    110ms
+Requests/Second:    9.1
 
 ------------------------------------------------------------
 PASS CRITERIA
 ------------------------------------------------------------
 [PASS] Concurrent Users:  25 >= 20
 [PASS] Failure Rate:     0.00% <= 10.0%
-[PASS] Avg Response:     49ms <= 3000ms
-[FAIL] P95 Response:     38432ms <= 5000ms
+[PASS] Avg Response:     65ms <= 3000ms
+[PASS] P95 Response:     110ms <= 5000ms
 
 ============================================================
-OVERALL RESULT: FAIL
-NF2 Requirement: NOT SATISFIED
+OVERALL RESULT: PASS
+NF2 Requirement: SATISFIED
 ============================================================

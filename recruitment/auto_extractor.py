@@ -20,7 +20,6 @@ except:
 
 
 class CVAutoExtractor:
-    """Professional CV auto-extraction engine"""
     
     def __init__(self, text: str):
         self.text = text
@@ -44,30 +43,48 @@ class CVAutoExtractor:
     
     # Contact Information (same as before)
     def extract_name(self) -> Optional[str]:
-        """Extract candidate name"""
-        # Strategy 1: Pattern
-        name_pattern = r'(?:name|candidate|applicant)\s*:?\s*([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)'
+        """Extract candidate name - IMPROVED for edge cases"""
+        # Strategy 1: Pattern - case insensitive, handles "Name / Surname"
+        name_pattern = r'(?i)(?:name|surname)\s*[/:]\s*(?:surname\s*)?([A-Z][a-z]+(?: [A-Z][a-z]+){1,3})'
         match = re.search(name_pattern, self.text)
         if match:
-            return match.group(1).strip()
+            potential_name = match.group(1).strip()
+            # Exclude common header words
+            if potential_name not in ['Professional', 'Email', 'Nationality', 'Gender', 'Employment', 'History', 'Education', 'Scholar', 'Google', 'Updated', 'Surname', 'Name']:
+                return potential_name
         
-        # Strategy 2: First line
-        first_lines = self.text.split('\n')[:5]
+        # Strategy 2: First line with improved detection - scan for name within line
+        first_lines = self.text.split('\n')[:10]
         for line in first_lines:
             line = line.strip()
+            # Remove common titles
+            line = re.sub(r'^(Dr\.|Prof\.|Mr\.|Mrs\.|Ms\.)\s*', '', line)
             words = line.split()
-            if 2 <= len(words) <= 4 and all(w[0].isupper() for w in words if w) and not any(c.isdigit() for c in line):
-                if len(line) > 5 and len(line) < 50:
-                    return line
+            
+            # Try to find 2-4 consecutive capitalized words in the line
+            for i in range(len(words)):
+                candidate_name = ' '.join(words[i:min(i+4, len(words))])
+                name_words = candidate_name.split()
+                if 2 <= len(name_words) <= 4:
+                    if all(w and len(w) > 1 and w[0].isupper() for w in name_words):
+                        if 10 < len(candidate_name) < 50 and not any(c.isdigit() for c in candidate_name):
+                            # Exclude header words
+                            if not any(header in candidate_name for header in ['Professional', 'Email', 'Nationality', 'Gender', 'Scholar', 'Employment', 'Google', 'Updated', 'Surname', 'Name']):
+                                return candidate_name
         
+        # Strategy 3: spaCy NER
         # Strategy 3: spaCy NER
         for ent in self.doc.ents:
             if ent.label_ == 'PERSON':
                 name = ent.text.strip()
-                if len(name) > 5 and len(name) < 50:
-                    return name
+                if 5 < len(name) < 50:
+                    # Clean up any labels that spaCy might have included
+                    name = re.sub(r'^(surname|name)\s*[:/\-]?\s*', '', name, flags=re.IGNORECASE).strip()
+                    if name and not any(header in name for header in ['Professional', 'Email', 'Nationality', 'Gender', 'Scholar']):
+                        return name
         
         return None
+
     
     def extract_email(self) -> Optional[str]:
         """Extract email"""
@@ -150,7 +167,7 @@ class CVAutoExtractor:
                     'graduation_year': graduation_year,
                 })
                 
-                break
+                # break removed - now extracts all degrees
         
         return education_list
     
@@ -162,13 +179,13 @@ class CVAutoExtractor:
         if not exp_section:
             return []
         
-        entries = re.split(r'\n(?=\d{4}\s*[–\-]|\d{4}\s+[-–])', exp_section)
+        entries = re.split(r'\n(?=\d{4}\s*[â€“\-]|\d{4}\s+[-â€“])', exp_section)
         
         for entry in entries[:15]:
             if len(entry) < 20:
                 continue
             
-            date_pattern = r'(\d{4})\s*[–\-—]\s*(\d{4}|present|current)'
+            date_pattern = r'(\d{4})\s*[â€“\-â€”]\s*(\d{4}|present|current)'
             date_match = re.search(date_pattern, entry.lower())
             
             if date_match:

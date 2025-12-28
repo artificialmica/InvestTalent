@@ -19,11 +19,7 @@ class Candidate(models.Model):
     application_source = models.CharField(max_length=50, default='direct')
     years_experience = models.IntegerField(default=0, blank=True, null=True)
     
-    # ============================================================
-    # F11: OPTIONAL SELF-REPORTED DIVERSITY FIELDS
-    # These are NEVER used for scoring - only for aggregate analytics
-    # Compliant with GDPR Art. 5(1)(c) and Bahrain PDPL
-    # ============================================================
+    
     GENDER_CHOICES = [
         ('', 'Prefer not to say'),
         ('male', 'Male'),

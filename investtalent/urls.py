@@ -46,6 +46,7 @@ urlpatterns = [
     path('api/workflow/', views.api_workflow_report, name='api_workflow'),
     path('api/health/', views.api_system_health, name='api_health'),
     path('api/candidate/<int:pk>/timeline/', views.api_candidate_timeline, name='api_timeline'),
+    path('api/candidate/<int:pk>/status/', views.update_candidate_status, name='api_update_status'),
     path('api/skill-variations/', views.skill_variations, name='skill_variations'),
     
     # DEBUG

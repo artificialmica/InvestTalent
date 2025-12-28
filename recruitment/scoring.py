@@ -355,15 +355,10 @@ def detect_skills_from_library(text):
     return found_skills
 
 
-# ============================================================
 # TEXT NORMALIZATION - FROM OLD CODE (CRITICAL)
-# This is what makes experience extraction work properly
-# ============================================================
+
 def normalize_cv_text(text):
-    """
-    Normalize CV text to fix common PDF parsing issues and HTML entities.
-    THIS MUST RUN BEFORE ANY EXTRACTION.
-    """
+
     # Decode HTML entities
     text = text.replace('&#x27;', "'")
     text = text.replace('&amp;', '&')
@@ -1103,6 +1098,16 @@ class ResumeAnalyzer:
         """Extract contact information with improved phone detection"""
         contact = {'email': None, 'phone': None, 'name': None}
         
+        # Extract name using auto_extractor
+        from .auto_extractor import CVAutoExtractor
+        try:
+            extractor = CVAutoExtractor(text)
+            extracted_name = extractor.extract_name()
+            if extracted_name:
+                contact['name'] = extracted_name
+        except Exception as e:
+            print(f"Name extraction error: {e}")
+        
         # Email extraction
         email_patterns = [
             r'[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.(?:com|edu|org|bh|uk|in|net|gov|io)',
@@ -1363,8 +1368,17 @@ class ResumeAnalyzer:
         return '\n'.join(section_lines)
     
     def extract_education(self, text):
-        """Extract education with comprehensive pattern matching"""
+        """Extract education with comprehensive pattern matching - FIXED"""
         normalized_text = normalize_cv_text(text)
+        
+        # FIX 1: Extract only Education section (prevents job title false positives)
+        edu_match = re.search(
+            r'(?i)\beducation\b(.*?)(?=\bexperience\b|\bemployment\b|\bprofessional\b|\bwork\s+history\b|$)',
+            normalized_text,
+            re.DOTALL
+        )
+        if edu_match:
+            normalized_text = edu_match.group(1)
         
         degrees = []
         highest_rank = -1
@@ -1397,10 +1411,36 @@ class ResumeAnalyzer:
             if degree_info['rank'] > highest_rank:
                 highest_rank = degree_info['rank']
         
-        # Pattern 2: "Ph.D - Field" or "Master of X - Field"
+        # Pattern 2: "Ph.D - Field" or "Master of X - Field" (WITH DASH)
         pattern2 = r'(Ph\.?D\.?|Doctorate|Master\s+of\s+\w+|Bachelor\s+of\s+\w+)\s*[-–—]\s*([A-Za-z\s,&()]+?)(?:,|\n|\d{4})'
         
         for match in re.finditer(pattern2, normalized_text, re.IGNORECASE):
+            degree_text = match.group(1).strip()
+            field = match.group(2).strip().rstrip(',.')
+            field = re.sub(r'\s*\([^)]*\)\s*$', '', field).strip()
+            
+            if field.lower() in seen_fields or len(field) < 3:
+                continue
+            seen_fields.add(field.lower())
+            
+            degree_info = self._classify_degree(degree_text)
+            
+            degrees.append({
+                'degree': degree_info['name'],
+                'level': degree_info['level'],
+                'rank': degree_info['rank'],
+                'field_of_study': field,
+                'institution': None,
+                'graduation_year': None
+            })
+            
+            if degree_info['rank'] > highest_rank:
+                highest_rank = degree_info['rank']
+        
+        # Pattern 2B: "Master of Engineering in Field" (NO DASH) - NEW FIX!
+        pattern2b = r'(Master\s+of\s+\w+|Bachelor\s+of\s+\w+)\s+in\s+([A-Za-z\s,&()]+?)(?:\s+from|\s+at|,|\n|\d{4}|$)'
+        
+        for match in re.finditer(pattern2b, normalized_text, re.IGNORECASE):
             degree_text = match.group(1).strip()
             field = match.group(2).strip().rstrip(',.')
             field = re.sub(r'\s*\([^)]*\)\s*$', '', field).strip()
@@ -1480,8 +1520,8 @@ class ResumeAnalyzer:
         if not degrees:
             simple_patterns = [
                 (r'\b(ph\.?\s*d\.?|doctorate|doctoral)\b', 'PhD', 'phd', 3),
-                (r'\b(m\.?\s*sc\.?|m\.?\s*eng\.?|master|mba)\b', 'Master', 'master', 2),
-                (r'\b(b\.?\s*sc\.?|b\.?\s*eng\.?|bachelor)\b', 'Bachelor', 'bachelor', 1),
+                (r'\b(m\.?\s*sc\.?|m\.?\s*eng\.?|m\.?\s*e\.?|master|mba)\b', 'Master', 'master', 2),
+                (r'\b(b\.?\s*sc\.?|b\.?\s*eng\.?|b\.?\s*e\.?|bachelor)\b', 'Bachelor', 'bachelor', 1),
                 (r'\b(diploma|associate)\b', 'Diploma', 'diploma', 0),
             ]
             
@@ -1509,6 +1549,32 @@ class ResumeAnalyzer:
                 'graduation_year': None
             })
         
+        # FIX 2: Remove near-duplicates (e.g., "Electronics" vs "Engineering in Electronics")
+        from difflib import SequenceMatcher
+        unique_degrees = []
+        
+        for deg in degrees:
+            is_dup = False
+            for existing in unique_degrees:
+                if deg['degree'] == existing['degree']:
+                    f1 = (deg.get('field_of_study') or '').lower()
+                    f2 = (existing.get('field_of_study') or '').lower()
+                    
+                    if f1 and f2:
+                        # Check if one field contains the other OR high similarity
+                        if f1 in f2 or f2 in f1 or SequenceMatcher(None, f1, f2).ratio() > 0.75:
+                            # Keep the longer (more descriptive) field
+                            if len(f1) > len(f2):
+                                unique_degrees.remove(existing)
+                                break
+                            else:
+                                is_dup = True
+                                break
+            
+            if not is_dup:
+                unique_degrees.append(deg)
+        
+        degrees = unique_degrees
         degrees.sort(key=lambda x: x['rank'], reverse=True)
         
         # Certifications
@@ -1536,7 +1602,8 @@ class ResumeAnalyzer:
             'certification_names': ', '.join(cert_names) if cert_names else None,
             'all_certifications': certs_found
         }
-    
+
+
     def _classify_degree(self, degree_text):
         """Classify degree text into standardized format"""
         degree_lower = degree_text.lower().strip()
@@ -2468,21 +2535,9 @@ class ResumeAnalyzer:
         return score
     
     def calculate_skills_score(self, validated_skills, hard_weight=0.7, soft_weight=0.3):
-        """
-        Calculate skills score using ONLY scorable skills (STEP 4)
-        
-        Scorable = high-confidence, role-anchored skills
-        Display = all validated ESCO skills (for UI)
-        
-        # NOTE:
-        # Thresholds calibrated against confidence-weighted sums (0.4–1.0 per skill)
-        # DO NOT convert back to raw counts — this prevents skill inflation
-        # These values are FROZEN after production testing on 4 CVs
-        """
         if not validated_skills:
             return 0
         
-        # STEP 4: Only use scorable skills for scoring
         scorable_skills = [s for s in validated_skills if s.get('is_scorable', True)]
         
         if not scorable_skills:
@@ -2491,14 +2546,11 @@ class ResumeAnalyzer:
         hard = [s for s in scorable_skills if s['is_hard_skill']]
         soft = [s for s in scorable_skills if not s['is_hard_skill']]
         
-        # Use confidence-weighted sum
         hard_weighted = sum(s['confidence'] for s in hard)
         soft_weighted = sum(s['confidence'] for s in soft)
         
-        # INVARIANT ASSERTION - catch drift
         assert hard_weighted <= len(hard) * 1.0 + 0.1, f"Hard weighted sum invalid: {hard_weighted}"
         
-        # ADJUSTED THRESHOLDS for confidence-weighted sums (FROZEN)
         if hard_weighted >= 5.5:
             hard_score = 100
         elif hard_weighted >= 4.0:
@@ -2556,9 +2608,7 @@ def get_or_create_skill_definition(skill_data):
     return skill_def
 
 
-# ============================================================
 # MAIN ANALYSIS FUNCTION
-# ============================================================
 def analyze_resume(candidate, job_posting=None, use_ml=True):
     """Main analysis function - HYBRID VERSION (OPTIMIZED)"""
     start_time = time.time()  # OPTIMIZATION 5: Performance timing
@@ -2585,6 +2635,7 @@ def analyze_resume(candidate, job_posting=None, use_ml=True):
     # Contact
     print("📞 Contact...")
     contact = analyzer.extract_contact_info(text)
+    print(f"   Name: {contact.get('name') or 'Not found'}")
     print(f"   Email: {contact['email'] or 'Not found'}")
     print(f"   Phone: {contact['phone'] or 'Not found'}")
     
@@ -2592,6 +2643,12 @@ def analyze_resume(candidate, job_posting=None, use_ml=True):
         candidate.email = contact['email']
     if contact['phone'] and not candidate.phone:
         candidate.phone = contact['phone']
+    
+    # Update name if extracted
+    if contact.get('name') and (not candidate.name or candidate.name == 'Processing...' or candidate.name.startswith('Candidate #') or candidate.name.startswith('Surname')):
+        candidate.name = contact['name']
+        candidate.save()
+        print(f"   ✓ Name updated: {candidate.name}")
     
     # Education
     print("📚 Education...")
@@ -2641,11 +2698,11 @@ def analyze_resume(candidate, job_posting=None, use_ml=True):
         if_w = getattr(job_posting, 'islamic_finance_weight', 0.20)
         hard_w = job_posting.hard_skills_weight
         soft_w = job_posting.soft_skills_weight
-        print(f"\n⚙️ Using job posting weights")
+        print(f"\n Using job posting weights")
     else:
         edu_w, exp_w, skill_w, if_w = 0.25, 0.30, 0.25, 0.20
         hard_w, soft_w = 0.70, 0.30
-        print(f"\n⚙️ Using default weights")
+        print(f"\n Using default weights")
     
     edu_score = analyzer.calculate_education_score(edu_data)
     exp_score = analyzer.calculate_experience_score(years_exp, has_if_exp)
@@ -2659,7 +2716,7 @@ def analyze_resume(candidate, job_posting=None, use_ml=True):
         (if_score * if_w), 1
     )
     
-    print(f"\n🎯 SCORES:")
+    print(f"\n SCORES:")
     print(f"   Education:       {edu_score}/100")
     print(f"   Experience:      {exp_score}/100")
     print(f"   Skills:          {skills_score}/100")

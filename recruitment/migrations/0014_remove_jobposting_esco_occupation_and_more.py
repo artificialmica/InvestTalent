@@ -15,24 +15,12 @@ class Migration(migrations.Migration):
             name='esco_occupation',
         ),
         migrations.RemoveField(
-            model_name='skillevidence',
-            name='skill',
-        ),
-        migrations.RemoveField(
             model_name='jobposting',
             name='required_skills',
         ),
         migrations.RemoveField(
             model_name='jobposting',
             name='preferred_skills',
-        ),
-        migrations.AlterUniqueTogether(
-            name='skillevidence',
-            unique_together=None,
-        ),
-        migrations.RemoveField(
-            model_name='skillevidence',
-            name='candidate',
         ),
         migrations.RemoveField(
             model_name='candidatejobapplication',

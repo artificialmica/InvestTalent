@@ -60,9 +60,7 @@ def extract_text_from_docx(uploaded_file):
         return ""
 
 
-# ============================================
 # LOGOUT VIEW - Works with GET requests
-# ============================================
 def logout_view(request):
     """Custom logout view that works with GET requests"""
     auth_logout(request)
@@ -188,7 +186,7 @@ def upload_resume(request):
             
             # Analyze resume (this will extract contact info, skills, etc.)
             try:
-                print(f"\n🚀 Starting AI analysis for candidate #{candidate.id}")
+                print(f"\n Starting AI analysis for candidate #{candidate.id}")
                 scores = analyze_resume(candidate, job_posting=job_posting, use_ml=True)
                 
                 if scores:
@@ -382,7 +380,16 @@ def dashboard(request):
     )['avg'] or 0
     
     # Status choices for filter dropdown
-    status_choices = Candidate._meta.get_field('status').choices
+    STATUS_CHOICES = [
+        ('received', 'Received'),
+        ('screening', 'Screening'),
+        ('shortlisted', 'Shortlisted'),
+        ('interview', 'Interview'),
+        ('offer', 'Offer'),
+        ('hired', 'Hired'),
+        ('rejected', 'Rejected'),
+    ]
+    status_choices = STATUS_CHOICES
     
     context = {
         'candidates': candidates_list,  # Use the list with ranks calculated
@@ -444,23 +451,71 @@ def export_analytics_report(request):
 def update_candidate_status(request, pk):
     """Update candidate status"""
     if request.method == 'POST':
-        candidate = get_object_or_404(Candidate, pk=pk)
-        new_status = request.POST.get('status')
-        notes = request.POST.get('notes', '')
+        print(f"DEBUG: request.path = '{request.path}'")
+        print(f"DEBUG: request.method = '{request.method}'")
         
-        if new_status:
-            # Log status change
-            workflow_tracker.log_status_change(
-                candidate,
-                new_status,
-                notes=notes,
-                user=request.user.username if request.user.is_authenticated else 'System'
-            )
+        try:
+            candidate = get_object_or_404(Candidate, pk=pk)
             
-            messages.success(request, f'Status updated to {new_status}')
+            # Handle both JSON and form data
+            if request.content_type == 'application/json':
+                import json
+                data = json.loads(request.body)
+                new_status = data.get('status')
+                notes = data.get('notes', '')
+            else:
+                new_status = request.POST.get('status')
+                notes = request.POST.get('notes', '')
+            
+            print(f"DEBUG: new_status = '{new_status}'")
+            
+            if new_status:
+                # Log status change
+                workflow_tracker.log_status_change(
+                    candidate,
+                    new_status,
+                    notes=notes,
+                    user=request.user.username if request.user.is_authenticated else 'System'
+                )
+                
+                print(f"DEBUG: Status changed successfully")
+                
+                # Check if API call FIRST, before messages
+                if request.path.startswith('/api/'):
+                    print("DEBUG: API call detected - returning JSON")
+                    return JsonResponse({
+                        'success': True,
+                        'message': f'Status updated to {new_status}',
+                        'new_status': new_status
+                    })
+                
+                # Only add message if NOT API
+                messages.success(request, f'Status updated to {new_status}')
+                print("DEBUG: Returning redirect")
+                return redirect('candidate_detail', pk=pk)
+            
+            # If no status provided
+            if request.path.startswith('/api/'):
+                return JsonResponse({'success': False, 'error': 'No status provided'}, status=400)
+            return redirect('candidate_detail', pk=pk)
         
-        return redirect('candidate_detail', pk=pk)
+        except Exception as e:
+            print(f"ERROR updating status: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            
+            if request.path.startswith('/api/'):
+                return JsonResponse({
+                    'success': False,
+                    'error': str(e)
+                }, status=400)
+            
+            messages.error(request, f'Error updating status: {str(e)}')
+            return redirect('candidate_detail', pk=pk)
     
+    # If not POST
+    if request.path.startswith('/api/'):
+        return JsonResponse({'success': False, 'error': 'Method not allowed'}, status=405)
     return redirect('dashboard')
 
 
